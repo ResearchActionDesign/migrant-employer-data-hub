@@ -1,0 +1,37 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.3.0
+  hooks:
+    - id: check-added-large-files
+      args: ['--maxkb=500']
+    - id: check-byte-order-marker
+    - id: mixed-line-ending
+    - id: sort-simple-yaml
+    - id: check-json
+    - id: trailing-whitespace
+    - id: check-case-conflict
+    - id: check-merge-conflict
+    - id: check-symlinks
+    - id: debug-statements
+    - id: detect-private-key
+
+# Python linting & static analysis
+- repo: https://github.com/timothycrosley/isort
+  rev: '5.10.1' # Use the revision sha / tag you want to point at
+  hooks:
+    - id: isort
+      types: [python]
+
+- repo: https://github.com/psf/black
+  rev: '22.6.0'
+  hooks:
+    - id: black
+      types: [python]
+      exclude: (migrations|tests)
+
+- repo: https://github.com/PyCQA/prospector
+  rev: '1.7.7'
+  hooks:
+  - id: prospector
+    types: [python]
+    exclude: (tests|migrations)
