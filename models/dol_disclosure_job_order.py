@@ -1,16 +1,38 @@
+import re
+from datetime import date, datetime, time
 from typing import Optional
 
-from datetime import date, time, datetime
-from sqlmodel import Field, SQLModel
-from pydantic import constr, conint, condecimal, AnyHttpUrl
+import sqlalchemy as sa
+from pydantic import AnyHttpUrl, condecimal, conint, constr
+from sqlmodel import Field, Relationship
 
-from .base import DoLDataItem, CaseStatus
+from constants import US_STATES_TO_ABBREV
+
+from .base import CaseStatus, DoLDataItem
+from .employer_record import EmployerRecord
 
 
 class DolDisclosureJobOrder(DoLDataItem, table=True):
-    case_number: Optional[str]
+    employer_record_id: Optional[int] = Field(
+        default=None, foreign_key="employer_record.id"
+    )
+    employer_record: Optional[EmployerRecord] = Relationship(
+        back_populates="dol_disclosure_job_orders"
+    )
+
+    file_name: Optional[str]
+    file_row: Optional[int]
+
+    # Override parent fields
+    first_seen: Optional[datetime] = Field(sa_column=sa.Column(sa.DateTime))
+    last_seen: Optional[datetime] = Field(
+        sa_column=sa.Column(sa.DateTime, onupdate=datetime.utcnow)
+    )
+
+    # Fields from the DoL Spreadsheet
+    case_number: Optional[str] = Field(index=True)
     case_status: Optional[CaseStatus]
-    received_date: Optional[date]
+    received_date: Optional[datetime]
     decision_date: Optional[date]
     type_of_employer_application: Optional[str]
     h2a_labor_contractor: Optional[bool]
@@ -94,11 +116,11 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     hourly_schedule_begin: Optional[time]
     hourly_schedule_end: Optional[time]
     wage_offer: Optional[condecimal(ge=0, decimal_places=2)]
-    per: Optional[str] # TODO: enum
+    per: Optional[str]  # TODO: enum
     piece_rate_offer: Optional[condecimal(ge=0, decimal_places=2)]
     piece_rate_unit: Optional[str]
     seven_ninenty_a_addendum_a_attached: Optional[bool]
-    frequency_of_pay: Optional[str] # TODO: enum
+    frequency_of_pay: Optional[str]  # TODO: enum
     other_frequency_of_pay: Optional[str]
     deductions_from_pay: Optional[str]
     education_level: Optional[str]
@@ -147,3 +169,29 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     website_to_apply: Optional[AnyHttpUrl]
     addendum_c_attached: Optional[bool]
     total_addendum_a_records: Optional[conint(ge=0)]
+
+    def clean(self):
+        if self.trade_name_dba:
+            self.trade_name_dba = re.sub(
+                r"^(DBA|BDA|dba|dba:|d\/b\/a) ", "", self.trade_name_dba
+            )
+
+        fields_to_strip = (
+            "employer_name",
+            "employer_address_1",
+            "employer_address_2",
+            "trade_name_dba",
+        )
+
+        for c in fields_to_strip:
+            value = getattr(self, c).strip()
+            if value.lower() == "n/a":
+                value = None
+            setattr(self, c, value)
+
+        if str(self.employer_state).lower() in US_STATES_TO_ABBREV:
+            self.employer_state = US_STATES_TO_ABBREV[
+                str(self.employer_state).lower()
+            ].upper()
+
+        return self

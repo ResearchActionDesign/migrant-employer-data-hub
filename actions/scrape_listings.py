@@ -1,15 +1,16 @@
 import random
 
-import settings
-from sqlmodel import Session, select
-from sqlalchemy.exc import NoResultFound, MultipleResultsFound
-
-from models.seasonal_jobs_job_order import SeasonalJobsJobOrder
-
-from db import engine
-
 import requests
 import rollbar
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlmodel import Session, select
+
+import settings
+from constants import USER_AGENT_STRING
+from db import get_engine
+from models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
+from models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+
 
 def scrape_listings(max_records: int = 1):
     """
@@ -20,18 +21,18 @@ def scrape_listings(max_records: int = 1):
     """
 
     if not (settings.JOBS_API_URL and settings.JOB_ORDER_BASE_URL):
-            raise Exception("JOBS_API_URL and JOB_ORDER_BASE_URL must be set")
+        raise Exception("JOBS_API_URL and JOB_ORDER_BASE_URL must be set")
     if not settings.JOBS_API_KEY:
         raise Exception("Jobs API Key must be set")
 
-    session = Session(engine)
+    session = Session(get_engine())
 
     unscraped_listings = session.exec(
         select(SeasonalJobsJobOrder)
-          .where(SeasonalJobsJobOrder.scraped==False)
+        .where(SeasonalJobsJobOrder.scraped is False)
         .order_by(SeasonalJobsJobOrder.first_seen.desc())
-                                      .limit(max_records)
-                                      ).all()
+        .limit(max_records)
+    ).all()
 
     if len(unscraped_listings) == 0:
         print("No listings left to scrape!")
@@ -52,7 +53,7 @@ def scrape_listings(max_records: int = 1):
             settings.JOBS_API_URL,
             json=payload,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+                "User-Agent": USER_AGENT_STRING,
                 "Content-Type": "application/json",
             },
             timeout=30,
@@ -72,7 +73,7 @@ def scrape_listings(max_records: int = 1):
         try:
             scraped_data = api_response.json()["value"][0]
         except ValueError:
-            msg = f"Invalid JSON"
+            msg = "Invalid JSON"
             print(msg)
             rollbar.report_message(
                 msg,
@@ -83,22 +84,24 @@ def scrape_listings(max_records: int = 1):
 
         scrape_successful = True
         if scraped_data["case_number"] != listing.dol_id:
-            msg = f"Case number mismatch between scraped data for DOL ID {listing.dol_id}. Scraped URL {settings.JOBS_API_URL}"
+            msg = (
+                f"Case number mismatch between scraped data for DOL ID {listing.dol_id}. "
+                f"Scraped URL {settings.JOBS_API_URL}"
+            )
             print(msg)
 
             # Try to parse the data anyway.
             original_listing = listing
             try:
                 listing = session.exec(
-                    select(SeasonalJobsJobOrder)
-                    .where(SeasonalJobsJobOrder.dol_id ==scraped_data["case_number"],
-                           SeasonalJobsJobOrder.scraped==False)
+                    select(SeasonalJobsJobOrder).where(
+                        SeasonalJobsJobOrder.dol_id == scraped_data["case_number"],
+                        SeasonalJobsJobOrder.scraped is False,
+                    )
                 ).one()
 
             except (NoResultFound, MultipleResultsFound):
-                listing = (
-                    original_listing  # Save this value so we can check for a PDF
-                )
+                listing = original_listing  # Save this value so we can check for a PDF
                 scrape_successful = False
 
         if scrape_successful:
@@ -108,16 +111,14 @@ def scrape_listings(max_records: int = 1):
 
             session.add(listing)
             scraped_count += 1
-            print(
-                f"{scraped_count} - Saved data for listing ID {listing.dol_id}"
-            )
+            print(f"{scraped_count} - Saved data for listing ID {listing.dol_id}")
             session.commit()
 
         if listing.pdf:
             continue
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
+            "User-Agent": USER_AGENT_STRING,
         }
         pdf_url = f"{settings.JOB_ORDER_BASE_URL}{listing.dol_id}"
         job_order_pdf = requests.get(
@@ -130,7 +131,7 @@ def scrape_listings(max_records: int = 1):
             job_order_pdf.status_code in (200, 301)
             and job_order_pdf.url != "https://seasonaljobs.dol.gov/system/404"
         ):
-            continue
+            True  # noqa
             # TODO: Scrape PDF.
             # listing.pdf = ContentFile(
             #     job_order_pdf.content, name=f"{listing.dol_id}.pdf"
@@ -157,9 +158,9 @@ def scrape_listings(max_records: int = 1):
                     },
                 )
             print(
-                    f"{scraped_count} - Failed job order PDF request for listing ID {listing.dol_id}, url {pdf_url}"
-                )
+                f"{scraped_count} - Failed job order PDF request for listing ID {listing.dol_id}, url {pdf_url}"
+            )
 
 
-if __name__ == '__main__':
-    scrape_listings()
+if __name__ == "__main__":
+    scrape_listings(5)
