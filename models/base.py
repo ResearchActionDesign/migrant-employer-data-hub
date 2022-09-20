@@ -20,11 +20,13 @@ class CaseStatus(str, Enum):
     partial = "Determination Issued - Partial Certification"
 
 
-class DoLDataItem(SQLModel):
+class SQLModelWithSnakeTableName(SQLModel):
     @declared_attr  # type: ignore
     def __tablename__(cls) -> str:  # noqa
         return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
+
+class DoLDataItem(SQLModelWithSnakeTableName):
     id: Optional[int] = Field(default=None, primary_key=True)
     source: DoLDataSource
     first_seen: Optional[datetime] = Field(
@@ -37,14 +39,10 @@ class DoLDataItem(SQLModel):
     )
 
 
-class StaticValue(SQLModel, table=True):
+class StaticValue(SQLModelWithSnakeTableName, table=True):
     """
     Static value storage in the DB for between runs.
     """
-
-    @declared_attr  # type: ignore
-    def __tablename__(cls) -> str:  # noqa
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
     key: str = Field(default=None, primary_key=True)
     value: Optional[str]

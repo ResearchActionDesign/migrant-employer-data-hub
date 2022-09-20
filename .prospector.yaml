@@ -44,6 +44,7 @@ pylint:
     - too-many-statements
     - too-many-locals
     - line-too-long
+    - too-many-arguments
   options:
     max-line-length: 100
 

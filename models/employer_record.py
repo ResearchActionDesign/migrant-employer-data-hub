@@ -3,6 +3,7 @@ from typing import List, Optional
 from sqlmodel import Field, Relationship
 
 from .base import DoLDataItem
+from .employer_record_address_link import EmployerRecordAddressLink
 
 
 class EmployerRecord(DoLDataItem, table=True):
@@ -27,6 +28,6 @@ class EmployerRecord(DoLDataItem, table=True):
     seasonal_jobs_job_orders: List["SeasonalJobsJobOrder"] = Relationship(  # noqa
         back_populates="employer_record"
     )
-    addresses: List["EmployerAddress"] = Relationship(  # noqa
-        back_populates="employer_record"
+    address_record_links: List["EmployerRecordAddressLink"] = Relationship(  # noqa
+        back_populates="employer_record",
     )

@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime, time
-from typing import Optional
+from typing import List, Optional
 
 import sqlalchemy as sa
 from pydantic import AnyHttpUrl, condecimal, conint, constr
@@ -9,15 +9,23 @@ from sqlmodel import Field, Relationship
 from constants import US_STATES_TO_ABBREV
 
 from .base import CaseStatus, DoLDataItem
+from .dol_disclosure_job_order_address_record_link import (
+    DolDisclosureJobOrderAddressRecordLink,
+)
 from .employer_record import EmployerRecord
 
 
 class DolDisclosureJobOrder(DoLDataItem, table=True):
+    # Relationship fields
     employer_record_id: Optional[int] = Field(
         default=None, foreign_key="employer_record.id"
     )
     employer_record: Optional[EmployerRecord] = Relationship(
         back_populates="dol_disclosure_job_orders"
+    )
+    address_records: List["AddressRecord"] = Relationship(  # noqa
+        back_populates="dol_disclosure_job_orders",
+        link_model=DolDisclosureJobOrderAddressRecordLink,
     )
 
     file_name: Optional[str]
@@ -116,11 +124,11 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     hourly_schedule_begin: Optional[time]
     hourly_schedule_end: Optional[time]
     wage_offer: Optional[condecimal(ge=0, decimal_places=2)]
-    per: Optional[str]  # TODO: enum
+    per: Optional[str]
     piece_rate_offer: Optional[condecimal(ge=0, decimal_places=2)]
     piece_rate_unit: Optional[str]
     seven_ninenty_a_addendum_a_attached: Optional[bool]
-    frequency_of_pay: Optional[str]  # TODO: enum
+    frequency_of_pay: Optional[str]
     other_frequency_of_pay: Optional[str]
     deductions_from_pay: Optional[str]
     education_level: Optional[str]
@@ -180,6 +188,10 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
             "employer_name",
             "employer_address_1",
             "employer_address_2",
+            "employer_city",
+            "employer_state",
+            "employer_country",
+            "employer_postal_code",
             "trade_name_dba",
         )
 
