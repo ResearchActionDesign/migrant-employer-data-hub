@@ -37,7 +37,7 @@ def link_address_to_employer(
         .where(employer_record=employer)
         .where(address_record=address)
         .where(address_type=address_type)
-    ).fetchall()
+    ).all()
     if len(existing_links) > 1:
         print(
             f"Error! Multiple address - employer record links found for {address_type} {address} <-> {employer.name}"
@@ -98,12 +98,12 @@ def update_addresses(max_records: int = -1):
         # First, check for matching office addresses.
         statement = (
             select(AddressRecord)
-            .where(AddressRecord.address_1 is job_order.employer_address_1.title())
-            .where(AddressRecord.address_2 is job_order.employer_address_2.title())
-            .where(AddressRecord.city is job_order.employer_city.title())
-            .where(AddressRecord.state is job_order.employer_state.upper())
-            .where(AddressRecord.postal_code is job_order.employer_postal_code)
-            .where(AddressRecord.country is job_order.employer_country.upper())
+            .where(AddressRecord.address_1 == job_order.employer_address_1.title())
+            .where(AddressRecord.address_2 == job_order.employer_address_2.title())
+            .where(AddressRecord.city == job_order.employer_city.title())
+            .where(AddressRecord.state == job_order.employer_state.upper())
+            .where(AddressRecord.postal_code == job_order.employer_postal_code)
+            .where(AddressRecord.country == job_order.employer_country.upper())
         )
 
         matching_addresses = session.exec(statement)
@@ -136,10 +136,10 @@ def update_addresses(max_records: int = -1):
         # Then do the same for matching jobsite addresses.
         statement = (
             select(AddressRecord)
-            .where(AddressRecord.address_1 is job_order.worksite_address.title())
-            .where(AddressRecord.city is job_order.worksite_city.title())
-            .where(AddressRecord.state is job_order.worksite_state.upper())
-            .where(AddressRecord.postal_code is job_order.worksite_postal_code)
+            .where(AddressRecord.address_1 == job_order.worksite_address.title())
+            .where(AddressRecord.city == job_order.worksite_city.title())
+            .where(AddressRecord.state == job_order.worksite_state.upper())
+            .where(AddressRecord.postal_code == job_order.worksite_postal_code)
         )
         matching_addresses = session.exec(statement)
 

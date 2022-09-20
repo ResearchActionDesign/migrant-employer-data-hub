@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List
 
 from openpyxl import load_workbook
@@ -208,7 +207,6 @@ def import_disclosure(filename: str):
             col_names[i] = alternate_col_names.get(name)
 
     count = 0
-    pub_date = datetime.utcnow
 
     for row in worksheet.iter_rows(min_row=2, values_only=True):
         values = row_to_dict(col_names, row)
@@ -216,7 +214,6 @@ def import_disclosure(filename: str):
         session.add(
             DolDisclosureJobOrder(
                 source=DoLDataSource.dol_disclosure,
-                pub_date=pub_date,
                 file_name=filename,
                 file_row=count + 1,
                 first_seen=values["received_date"],

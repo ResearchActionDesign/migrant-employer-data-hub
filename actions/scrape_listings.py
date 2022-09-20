@@ -1,7 +1,9 @@
 import random
+import sys
 
 import requests
 import rollbar
+from sqlalchemy import false
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from sqlmodel import Session, select
 
@@ -29,7 +31,7 @@ def scrape_listings(max_records: int = 1):
 
     unscraped_listings = session.exec(
         select(SeasonalJobsJobOrder)
-        .where(SeasonalJobsJobOrder.scraped is False)
+        .where(SeasonalJobsJobOrder.scraped == false())
         .order_by(SeasonalJobsJobOrder.first_seen.desc())
         .limit(max_records)
     ).all()
@@ -67,14 +69,14 @@ def scrape_listings(max_records: int = 1):
                     "dol_id": listing.dol_id,
                 },
             )
-            print(msg)
+            sys.stderr.write(msg)
             continue
 
         try:
             scraped_data = api_response.json()["value"][0]
         except ValueError:
             msg = "Invalid JSON"
-            print(msg)
+            sys.stderr.write(msg)
             rollbar.report_message(
                 msg,
                 "error",
@@ -96,7 +98,7 @@ def scrape_listings(max_records: int = 1):
                 listing = session.exec(
                     select(SeasonalJobsJobOrder).where(
                         SeasonalJobsJobOrder.dol_id == scraped_data["case_number"],
-                        SeasonalJobsJobOrder.scraped is False,
+                        SeasonalJobsJobOrder.scraped == false(),
                     )
                 ).one()
 
@@ -157,7 +159,7 @@ def scrape_listings(max_records: int = 1):
                         "pdf_url": pdf_url,
                     },
                 )
-            print(
+            sys.stderr.write(
                 f"{scraped_count} - Failed job order PDF request for listing ID {listing.dol_id}, url {pdf_url}"
             )
 

@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship
 
 from constants import US_STATES_TO_ABBREV
 
-from .base import DoLDataItem
+from .base import DoLDataItem, DoLDataSource
 from .employer_record import EmployerRecord
 
 
@@ -16,6 +16,7 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
     Job order scraped from SeasonalJobs.dol.gov
     """
 
+    # Relationship fields
     employer_record_id: Optional[int] = Field(
         default=None, foreign_key="employer_record.id"
     )
@@ -23,6 +24,10 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
         back_populates="seasonal_jobs_job_orders"
     )
 
+    # Override base fields
+    source = DoLDataSource.scraper
+
+    # Data fields
     title: str = Field(index=True)
     link: Optional[AnyHttpUrl]
     description: Optional[str]
@@ -68,6 +73,10 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
         }
         for field_name, mapped_field_name in employer_fields.items():
             v = self.scraped_data.get(field_name, None)
+            if v is not None:
+                v = v.strip()
+            if v == "":
+                v = None
             setattr(self, mapped_field_name, v)
 
         if str(self.employer_state).lower() in US_STATES_TO_ABBREV:

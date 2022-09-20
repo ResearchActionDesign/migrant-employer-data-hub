@@ -8,7 +8,7 @@ from sqlmodel import Field, Relationship
 
 from constants import US_STATES_TO_ABBREV
 
-from .base import CaseStatus, DoLDataItem
+from .base import CaseStatus, DoLDataItem, DoLDataSource
 from .dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
@@ -36,6 +36,7 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     last_seen: Optional[datetime] = Field(
         sa_column=sa.Column(sa.DateTime, onupdate=datetime.utcnow)
     )
+    source = DoLDataSource.dol_disclosure
 
     # Fields from the DoL Spreadsheet
     case_number: Optional[str] = Field(index=True)
@@ -196,9 +197,11 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
         )
 
         for c in fields_to_strip:
-            value = getattr(self, c).strip()
-            if value.lower() == "n/a":
-                value = None
+            value = getattr(self, c)
+            if value is not None:
+                value = value.strip()
+                if value.lower() == "n/a" or value == "":
+                    value = None
             setattr(self, c, value)
 
         if str(self.employer_state).lower() in US_STATES_TO_ABBREV:

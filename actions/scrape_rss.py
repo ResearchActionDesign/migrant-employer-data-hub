@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from time import strftime
 
@@ -7,9 +8,10 @@ from sqlmodel import Session, select
 
 from constants import USER_AGENT_STRING
 from db import get_engine
-from models.base import DoLDataSource, StaticValue
+from models.base import DoLDataSource
 from models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+from models.static_value import StaticValue
 from settings import DOL_ID_REGEX, ETAG_KEY, JOBS_RSS_FEED_URL, MODIFIED_KEY
 
 
@@ -56,13 +58,13 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
         # Error code from feed scraper
         msg = f"Error pulling RSS Feed {rss_entries.get('bozo_exception', '')}"
 
-        print(msg)
+        sys.stderr.write(msg)
         rollbar.report_message(msg, "error")
 
     if rss_entries.get("status", False) not in [200, 301]:
         # Error code from feed scraper
         msg = f"RSS Feed status code: {rss_entries.get('status', False)}, not 200"
-        print(msg)
+        sys.stderr.write(msg)
         rollbar.report_message(msg, "error")
         return
 
@@ -73,7 +75,7 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
     processed_count = 0
     for entry in rss_entries.get("entries", []):
         processed_count += 1
-        if max_records and processed_count > max_records:
+        if processed_count > max_records > 0:
             break
 
         link = entry.get("link", "")
@@ -91,7 +93,7 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
         dol_id = dol_ids[0]
         pub_date = strftime("%Y-%m-%d", entry.get("published_parsed", ""))
         if not dol_id:
-            print(f"Invalid entry with link {entry.get('link', 'N/A')}")
+            sys.stderr.write(f"Invalid entry with link {entry.get('link', 'N/A')}")
             continue
 
         listing_attributes = {

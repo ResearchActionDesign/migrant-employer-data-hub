@@ -57,15 +57,16 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
         return hashlib.md5(str(self).encode())
 
     def clean(self):
-        self.address_1 = self.address_1.title().strip()
-        self.address_2 = self.address_2.title().strip()
-        self.city = self.city.title().strip()
-        self.state = self.state.upper().strip()
+
+        self.address_1 = self.address_1.title().strip() if self.address_1 else None
+        self.address_2 = self.address_2.title().strip() if self.address_2 else None
+        self.city = self.city.title().strip() if self.city else None
+        self.postal_code = self.postal_code.strip() if self.postal_code else None
+        self.state = self.state.upper().strip() if self.state else None
+        self.country = self.country.upper().strip() if self.country else None
 
         if str(self.state).lower() in US_STATES_TO_ABBREV:
             self.state = US_STATES_TO_ABBREV[str(self.state).lower()].upper()
-
-        self.country = self.country.upper().strip()
 
         if self.country is None:
             self.country = "UNITED STATES OF AMERICA"
