@@ -227,6 +227,7 @@ def import_disclosure(filename: str):
             session.commit()
 
     session.commit()
+    session.close()
     print(f"{count} listings imported from file {filename}")
 
 

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 
+import sqlalchemy as sa
 from sqlmodel import Field, Relationship
 
 from .base import DoLDataItem
@@ -19,6 +20,13 @@ class EmployerRecordAddressLink(DoLDataItem, table=True):
 
     This table also stores metadata related to the address at an employer-level.
     """
+
+    # Override base fields
+    id: Optional[int] = Field(
+        sa_column=sa.Column("id", sa.Integer, autoincrement=True),
+        default=None,
+        primary_key=True,
+    )
 
     # Data fields
     address_type: AddressType = Field(default=None, primary_key=True)

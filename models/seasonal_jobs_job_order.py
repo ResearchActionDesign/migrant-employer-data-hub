@@ -25,7 +25,7 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
     )
 
     # Override base fields
-    source = DoLDataSource.scraper
+    source = Field(default=DoLDataSource.scraper)
 
     # Data fields
     title: str = Field(index=True)

@@ -133,8 +133,6 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
             f"{processed_count} - {operation} entry with title {listing_attributes['title']} and id {dol_id}"
         )
 
-    session.commit()
-
     # Assuming scrape was successful, save etag and last_modified.
     if rss_entries.get("etag", False):
         etag_obj.value = rss_entries.get("etag", "")
@@ -145,6 +143,7 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
         session.add(modified_obj)
 
     session.commit()
+    session.close()
 
 
 if __name__ == "__main__":

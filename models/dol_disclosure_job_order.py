@@ -36,7 +36,7 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     last_seen: Optional[datetime] = Field(
         sa_column=sa.Column(sa.DateTime, onupdate=datetime.utcnow)
     )
-    source = DoLDataSource.dol_disclosure
+    source = Field(default=DoLDataSource.dol_disclosure)
 
     # Fields from the DoL Spreadsheet
     case_number: Optional[str] = Field(index=True)

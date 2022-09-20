@@ -51,7 +51,18 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
     lon: Optional[float]
 
     def __str__(self):
-        return f"{self.address_1} {self.address_2}, {self.city}, {self.state} {self.postal_code} {self.country}"
+        values_dict = [
+            self.address_1,
+            self.address_2,
+            self.city + "," if self.city else None,
+            self.state,
+            self.postal_code,
+            self.country,
+        ]
+        return " ".join([v for v in values_dict if v]).strip()
+
+    def is_null(self):
+        return str(self).strip() == ""
 
     def get_geocode_hash(self):
         return hashlib.md5(str(self).encode())
@@ -67,8 +78,5 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
 
         if str(self.state).lower() in US_STATES_TO_ABBREV:
             self.state = US_STATES_TO_ABBREV[str(self.state).lower()].upper()
-
-        if self.country is None:
-            self.country = "UNITED STATES OF AMERICA"
 
         return self

@@ -20,7 +20,16 @@ class TestAddressRecord(TestCase):
             postal_code='27701',
             country='USA'
         )
-        self.assertEqual(str(test_address), "Address line 1 Address line 2, City, NC 27701 USA")
+        self.assertEqual(str(test_address), "Address line 1 Address line 2 City, NC 27701 USA")
+        test_address = AddressRecord(
+            address_1='Address line 1',
+            address_2='Address line 2',
+            city=None,
+            state=None,
+            postal_code=None,
+            country='USA'
+        )
+        self.assertEqual(str(test_address), "Address line 1 Address line 2 USA")
 
     def test_geocode_hash(self):
         test_address = AddressRecord(
@@ -56,7 +65,21 @@ class TestAddressRecord(TestCase):
         self.assertIsNone(test_address.city)
         self.assertEqual(test_address.state,'NC')
         self.assertEqual(test_address.postal_code,'27701')
-        self.assertEqual(test_address.country,'UNITED STATES OF AMERICA')
+        self.assertIsNone(test_address.country)
+
+    def test_not_null_method(self):
+        test_address = AddressRecord(
+            address_1=' Address LINE 1 ',
+            address_2=' address line 2  ',
+            city=None,
+            state='north carolina',
+            postal_code='27701 ',
+            country=None
+        )
+        self.assertFalse(test_address.is_null())
+        test_address = AddressRecord(
+        )
+        self.assertTrue(test_address.is_null())
 
 
 

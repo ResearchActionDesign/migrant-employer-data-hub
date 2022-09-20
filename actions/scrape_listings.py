@@ -162,6 +162,7 @@ def scrape_listings(max_records: int = 1):
             sys.stderr.write(
                 f"{scraped_count} - Failed job order PDF request for listing ID {listing.dol_id}, url {pdf_url}"
             )
+    session.close()
 
 
 if __name__ == "__main__":

@@ -142,6 +142,7 @@ def update_employer_records():
     # Now do the same for the scraped seasonal job order data.
     update_employer_records_from_seasonal_jobs(session)
     session.commit()
+    session.close()
 
 
 if __name__ == "__main__":
