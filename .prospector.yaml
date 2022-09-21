@@ -45,6 +45,7 @@ pylint:
     - too-many-locals
     - line-too-long
     - too-many-arguments
+    - unspecified-encoding
   options:
     max-line-length: 100
 

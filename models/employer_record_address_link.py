@@ -1,10 +1,16 @@
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship
 
+from models.address_record import AddressRecord
+
 from .base import DoLDataItem
+
+# Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
+if TYPE_CHECKING:
+    from models.employer_record import EmployerRecord
 
 
 class AddressType(Enum):
@@ -39,9 +45,9 @@ class EmployerRecordAddressLink(DoLDataItem, table=True):
         default=None, foreign_key="address_record.id", primary_key=True
     )
 
-    employer_record: "EmployerRecord" = Relationship(  # noqa
+    employer_record: Optional["EmployerRecord"] = Relationship(  # noqa
         back_populates="address_record_links"
     )
-    address_record: "AddressRecord" = Relationship(  # noqa
+    address_record: Optional[AddressRecord] = Relationship(  # noqa
         back_populates="employer_record_links"
     )

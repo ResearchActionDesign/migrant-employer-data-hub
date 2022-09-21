@@ -19,6 +19,10 @@ openpyxl = "*"
 alembic = "*"
 sqlalchemy-json = "*"
 pytest = "*"
+dedupe = "*"
+unidecode = "*"
+dedupe-variable-name = "*"
+postal = "*"
 
 [requires]
 python_version = "3.10"

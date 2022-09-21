@@ -1,18 +1,21 @@
 import re
 from datetime import date, datetime, time
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import sqlalchemy as sa
 from pydantic import AnyHttpUrl, condecimal, conint, constr
 from sqlmodel import Field, Relationship
 
 from constants import US_STATES_TO_ABBREV
-
-from .base import CaseStatus, DoLDataItem, DoLDataSource
-from .dol_disclosure_job_order_address_record_link import (
+from models.base import CaseStatus, DoLDataItem, DoLDataSource, clean_string_field
+from models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
-from .employer_record import EmployerRecord
+from models.employer_record import EmployerRecord
+
+# Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
+if TYPE_CHECKING:
+    from models.address_record import AddressRecord
 
 
 class DolDisclosureJobOrder(DoLDataItem, table=True):
@@ -197,12 +200,7 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
         )
 
         for c in fields_to_strip:
-            value = getattr(self, c)
-            if value is not None:
-                value = value.strip()
-                if value.lower() == "n/a" or value == "":
-                    value = None
-            setattr(self, c, value)
+            setattr(self, c, clean_string_field(getattr(self, c)))
 
         if str(self.employer_state).lower() in US_STATES_TO_ABBREV:
             self.employer_state = US_STATES_TO_ABBREV[

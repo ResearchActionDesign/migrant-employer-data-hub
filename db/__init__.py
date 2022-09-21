@@ -6,10 +6,15 @@ sqlite_file_name = "test_database.db"
 sqlite_url = f"sqlite:///{BASE_DIR}/{sqlite_file_name}"
 
 
-def get_engine(echo=False):
-    engine = create_engine(sqlite_url, echo=echo)
-    SQLModel.metadata.create_all(engine)
-    return engine
+def get_engine(echo=False, yield_per=False, refresh=False):
+    if refresh or not hasattr(get_engine, "engine"):
+        get_engine.engine = create_engine(
+            sqlite_url,
+            echo=echo,
+            execution_options=({"yield_per": yield_per} if yield_per else {}),
+        )
+    SQLModel.metadata.create_all(get_engine.engine)
+    return get_engine.engine
 
 
 def get_mock_engine():
@@ -22,7 +27,7 @@ def get_mock_engine():
     if not hasattr(get_mock_engine, "engine"):
         get_mock_engine.engine = create_engine(
             "sqlite://",
-            connect_args={"check_same_thread": True},
+            connect_args={"check_same_thread": False},
             poolclass=pool.StaticPool,
             echo=False,
         )

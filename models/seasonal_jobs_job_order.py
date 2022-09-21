@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from pydantic import AnyHttpUrl, constr
 from sqlalchemy import Column
@@ -8,7 +8,10 @@ from sqlmodel import Field, Relationship
 from constants import US_STATES_TO_ABBREV
 
 from .base import DoLDataItem, DoLDataSource
-from .employer_record import EmployerRecord
+
+# Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
+if TYPE_CHECKING:
+    from models.employer_record import EmployerRecord
 
 
 class SeasonalJobsJobOrder(DoLDataItem, table=True):
@@ -20,7 +23,7 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
     employer_record_id: Optional[int] = Field(
         default=None, foreign_key="employer_record.id"
     )
-    employer_record: Optional[EmployerRecord] = Relationship(
+    employer_record: Optional["EmployerRecord"] = Relationship(
         back_populates="seasonal_jobs_job_orders"
     )
 

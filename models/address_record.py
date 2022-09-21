@@ -1,16 +1,19 @@
 import hashlib
 from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlmodel import Field, Relationship
 
 from constants import US_STATES_TO_ABBREV
-
-from .base import SQLModelWithSnakeTableName
-from .dol_disclosure_job_order_address_record_link import (
+from models.base import SQLModelWithSnakeTableName
+from models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
-from .employer_record_address_link import EmployerRecordAddressLink
+
+# Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
+if TYPE_CHECKING:
+    from models.dol_disclosure_job_order import DolDisclosureJobOrder
+    from models.employer_record_address_link import EmployerRecordAddressLink
 
 
 class AddressRecord(SQLModelWithSnakeTableName, table=True):

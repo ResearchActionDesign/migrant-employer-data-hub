@@ -8,6 +8,21 @@ from sqlalchemy.orm import declared_attr
 from sqlmodel import Field, SQLModel
 
 
+def clean_string_field(value: str | None) -> str | None:
+    if not value:
+        return None
+    value = re.sub("  +", " ", value)
+    value = re.sub("\n", " ", value)
+    value = value.strip().strip('"').strip("'").strip()
+
+    if value.lower() == "n/a":
+        value = None
+
+    if not value:
+        value = None
+    return value
+
+
 class DoLDataSource(str, Enum):
     scraper = "scraper"
     dol_disclosure = "DoL annual or quarterly disclosure data"
