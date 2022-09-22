@@ -19,10 +19,13 @@ def get_engine(echo=False, yield_per=False, refresh=False):
 
 def get_mock_engine():
     from models.address_record import AddressRecord  # noqa
+    from models.dedupe_entity_map import DedupeEntityMap  # noqa
     from models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
     from models.employer_record import EmployerRecord  # noqa
     from models.employer_record_address_link import EmployerRecordAddressLink  # noqa
     from models.seasonal_jobs_job_order import SeasonalJobsJobOrder  # noqa
+    from models.static_value import StaticValue  # noqa
+    from models.unique_employer import UniqueEmployer  # noqa
 
     if not hasattr(get_mock_engine, "engine"):
         get_mock_engine.engine = create_engine(

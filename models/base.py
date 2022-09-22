@@ -41,7 +41,18 @@ class SQLModelWithSnakeTableName(SQLModel):
         return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
 
-class DoLDataItem(SQLModelWithSnakeTableName):
+class DoLDataItemWithoutSourceOrId(SQLModelWithSnakeTableName):
+    first_seen: Optional[datetime] = Field(
+        sa_column=sa.Column(sa.DateTime, default=datetime.utcnow)
+    )
+    last_seen: Optional[datetime] = Field(
+        sa_column=sa.Column(
+            sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        )
+    )
+
+
+class DoLDataItem(DoLDataItemWithoutSourceOrId):
     id: Optional[int] = Field(default=None, primary_key=True)
     source: DoLDataSource
     first_seen: Optional[datetime] = Field(
