@@ -51,23 +51,22 @@ def update_employer_records_from_disclosure_data(session: Session):
 
     # Next, update the linked employer_record_ids.
     sql_query = f"""update dol_disclosure_job_order
-    set employer_record_id = e.id
-    from (select id, name, trade_name_dba, city, state, country, phone from employer_record) as e
+    set employer_record_id = (
+    select id from employer_record e
     where lower(dol_disclosure_job_order.employer_name) {IS_} lower(e.name)
       and lower(dol_disclosure_job_order.trade_name_dba) {IS_} lower(e.trade_name_dba)
       and lower(dol_disclosure_job_order.employer_city) {IS_} lower(e.city)
       and lower(dol_disclosure_job_order.employer_state) {IS_} lower(e.state)
       and lower(dol_disclosure_job_order.employer_country) {IS_} lower(e.country)
-      and dol_disclosure_job_order.employer_phone {IS_}  e.phone
-      and dol_disclosure_job_order.employer_record_id is null;"""
+      and dol_disclosure_job_order.employer_phone {IS_} e.phone)
+      where dol_disclosure_job_order.employer_record_id is null;"""
     session.exec(text(sql_query))
 
     # Lastly, update the last_seen value for employers if needed.
     sql_query = """update employer_record
-    set last_seen = d.last_seen
-    from (select employer_record_id, max(last_seen) as last_seen from dol_disclosure_job_order group by employer_record_id) as d
-    where d.employer_record_id = employer_record.id
-    and d.last_seen > employer_record.last_seen;"""
+    set last_seen = (select max(last_seen)
+    from dol_disclosure_job_order where employer_record_id = employer_record.id group by employer_record_id)
+    where exists (select last_seen from dol_disclosure_job_order where employer_record_id = employer_record.id and last_seen > employer_record.last_seen);"""
     session.exec(text(sql_query))
 
 
@@ -112,23 +111,22 @@ def update_employer_records_from_seasonal_jobs(session: Session):
 
     # Next, update the linked employer_record_ids.
     sql_query = f"""update seasonal_jobs_job_order
-        set employer_record_id = e.id
-        from (select id, name, trade_name_dba, city, state, country, phone from employer_record) as e
+        set employer_record_id = (select id
+         from employer_record e
         where lower(seasonal_jobs_job_order.employer_name) {IS_} lower(e.name)
           and lower(seasonal_jobs_job_order.trade_name_dba) {IS_} lower(e.trade_name_dba)
           and lower(seasonal_jobs_job_order.employer_city) {IS_} lower(e.city)
           and lower(seasonal_jobs_job_order.employer_state) {IS_} lower(e.state)
           and lower(seasonal_jobs_job_order.employer_country) {IS_} lower(e.country)
-          and seasonal_jobs_job_order.employer_phone {IS_} e.phone
-          and seasonal_jobs_job_order.employer_record_id is null;"""
+          and seasonal_jobs_job_order.employer_phone {IS_} e.phone)
+          where seasonal_jobs_job_order.employer_record_id is null;"""
     session.exec(text(sql_query))
 
     # Lastly, update the last_seen value for employers if needed.
     sql_query = """update employer_record
-    set last_seen = d.last_seen
-    from (select employer_record_id, max(last_seen) as last_seen from seasonal_jobs_job_order group by employer_record_id) as d
-    where d.employer_record_id = employer_record.id
-    and d.last_seen > employer_record.last_seen;"""
+    set last_seen = (select max(last_seen)
+    from seasonal_jobs_job_order where employer_record_id = employer_record.id group by employer_record_id)
+    where exists (select last_seen from seasonal_jobs_job_order where employer_record_id = employer_record.id and last_seen > employer_record.last_seen);"""
     session.exec(text(sql_query))
 
 

@@ -76,10 +76,26 @@ jobs:
     executor: aws-cli/default
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - 'db:f1:58:f3:89:3a:7a:0f:2c:dd:0a:fe:4e:fc:2c:14'
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
           aws-region: AWS_REGION
+      - run: >-
+          aws ec2-instance-connect send-ssh-public-key
+          --instance-id $AWS_EC2_INSTANCE_ID
+          --instance-os-user ec2-user
+          --availability-zone us-east-2b
+          --ssh-public-key "$SSH_PUBLIC_KEY"
+      - run: |
+          ssh -A -o StrictHostKeyChecking=no ec2-user@$AWS_EC2_INSTANCE_URL "
+            ssh-add
+            cd cdm-data-hub \
+            && git fetch origin \
+            && git checkout $CIRCLE_SHA1 \
+            && pipenv install"
 
 workflows:
   test:

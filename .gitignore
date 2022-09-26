@@ -147,3 +147,5 @@ files/
 function.zip
 
 *.db
+
+.ssh/*
