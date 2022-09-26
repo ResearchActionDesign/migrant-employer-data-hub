@@ -6,7 +6,7 @@ orbs:
 jobs:
   install_dependencies:
     docker:
-      - image: cimg/python:3.10.6-node
+      - image: cimg/python:3.9.6-node
 
     working_directory: ~/repo
     environment:
@@ -43,7 +43,7 @@ jobs:
 
   back_end_test:
     docker:
-      - image: cimg/python:3.10.6-node
+      - image: cimg/python:3.9.6-node
     resource_class: large
     working_directory: ~/repo
     environment:
@@ -58,7 +58,7 @@ jobs:
 
   lint:
     docker:
-      - image: cimg/python:3.10.6-node
+      - image: cimg/python:3.9.6-node
     working_directory: ~/repo
     environment:
       PIPENV_VENV_IN_PROJECT: 1

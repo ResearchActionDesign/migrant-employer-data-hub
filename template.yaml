@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: |
+  cdm-data-hub
+  SAM Template for CDM data hub
+Globals:
+  Function:
+    Timeout: 300
+Resources:
+  HandleActionsFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: ./app
+      Handler: app.lambda_handler.lambda_handler
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      Runtime: python3.9
+      Environment:
+        Variables:
+          JOB_ORDER_PDF_DESTINATION: !Ref JobOrderPdfsBucket
+
+
+  H2ADisclosureDatasetsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 'h2a-disclosure-datasets'
+#      NotificationConfiguration:
+#        LambdaConfigurations:
+#          - Event: 's3:ObjectCreated:*'
+#            Function: !GetAtt HandleActionsFunction.Arn
+
+  JobOrderPdfsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 'job-order-pdfs'
+
+  DedupeConfigBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 'dedupe-config'
+#
+#  LambdaExecutionpermission:
+#    Type: 'AWS::Lambda::Permission'
+#    Properties:
+#      FunctionName: !GetAtt HandleActionsFunction.Arn
+#      Action: 'lambda:InvokeFunction'
+#      Principal: 's3.amazonaws.com'
+#      SourceArn: 'arn:aws:s3:::h2a-disclosure-datasets'
+
+  CDMDataHubLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: [ lambda.amazonaws.com ] }
+            Action: [ 'sts:AssumeRole' ]
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                Resource:
+                  - !Sub
+                    - 'arn:aws:s3:::${BucketName}/*'
+                    - BucketName: !Ref H2ADisclosureDatasetsBucket
+                  - !Sub
+                    - 'arn:aws:s3:::${BucketName}/*'
+                    - BucketName: !Ref JobOrderPdfsBucket
+                  - !Sub
+                    - 'arn:aws:s3:::${BucketName}/*'
+                    - BucketName: !Ref DedupeConfigBucket
+              - Effect: Allow
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - 'rds-db:connect'
+                Resource:
+                  - !Sub
+                    - 'arn:aws:rds-db:us-east-2:${AccountId}:dbuser:${DbName}/lambda_user'
+                    - AccountId: '{{resolve:ssm:account-id}}'
+                      DbName:  '{{resolve:ssm:cdm-data-hub-rds}}'

@@ -149,3 +149,4 @@ function.zip
 *.db
 
 .ssh/*
+app/job-order-pdfs/*
