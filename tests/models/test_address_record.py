@@ -65,7 +65,7 @@ class TestAddressRecord(TestCase):
         self.assertIsNone(test_address.city)
         self.assertEqual(test_address.state,'NC')
         self.assertEqual(test_address.postal_code,'27701')
-        self.assertIsNone(test_address.country)
+        self.assertEqual(test_address.country,'UNITED STATES OF AMERICA')
 
     def test_not_null_method(self):
         test_address = AddressRecord(

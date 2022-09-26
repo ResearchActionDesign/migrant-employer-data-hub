@@ -27,6 +27,7 @@ class TestUpdateEmployerRecords(TestCase):
 
     def tearDown(self):
         drop_all_models()
+        self.session.close()
 
     def test_generates_employer_records(self):
         test_listing = DolDisclosureJobOrder(

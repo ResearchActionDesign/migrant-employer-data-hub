@@ -56,6 +56,7 @@ class TestScrapeListings(TestCase):
 
     def tearDown(self):
         drop_all_models()
+        self.session.close()
 
     def test_fails_on_invalid_status_code(self):
         mock_request_post = MagicMock()

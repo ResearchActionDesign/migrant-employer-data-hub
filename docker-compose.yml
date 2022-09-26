@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+    db:
+        image: postgis/postgis
+        volumes:
+            - ./db:/docker-entrypoint-initdb.d
+            - cdm_data_hub_data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_USER: 'postgres'
+            POSTGRES_PASSWORD: 'postgres'
+        ports:
+            - 15432:5432
+
+volumes:
+    cdm_data_hub_data:
+        driver: local

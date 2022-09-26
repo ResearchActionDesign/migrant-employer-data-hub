@@ -29,6 +29,7 @@ class TestScrapeRSS(TestCase):
 
     def tearDown(self):
         drop_all_models()
+        self.session.close()
 
     def test_fails_on_bozo_error(self):
         with patch("feedparser.parse") as mock_parse:

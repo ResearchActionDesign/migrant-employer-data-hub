@@ -1,15 +1,12 @@
 from sqlmodel import SQLModel, create_engine, pool
 
-from settings import BASE_DIR
-
-sqlite_file_name = "test_database.db"
-sqlite_url = f"sqlite:///{BASE_DIR}/{sqlite_file_name}"
+from settings import DB_URL
 
 
 def get_engine(echo=False, yield_per=False, refresh=False):
     if refresh or not hasattr(get_engine, "engine"):
         get_engine.engine = create_engine(
-            sqlite_url,
+            DB_URL,
             echo=echo,
             execution_options=({"yield_per": yield_per} if yield_per else {}),
         )

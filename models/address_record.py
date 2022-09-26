@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, List, Optional
 
 from sqlmodel import Field, Relationship
 
-from constants import US_STATES_TO_ABBREV
-from models.base import SQLModelWithSnakeTableName
+from constants import US_STATE_ABBREVIATIONS, US_STATES_TO_ABBREV
+from models.base import SQLModelWithSnakeTableName, clean_string_field
 from models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
@@ -37,12 +37,15 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
     )
 
     # Data fields. Note -- string fields here are case-converted before saving, for consistency.
-    address_1: Optional[str]
-    address_2: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    postal_code: Optional[str]
-    country: Optional[str]
+    address_1: Optional[str] = Field(index=True)
+    address_2: Optional[str] = Field(index=True)
+    normalized_address: Optional[str] = Field(
+        index=True
+    )  # Deduped/normalized version of address 1 + address 2.
+    city: Optional[str] = Field(index=True)
+    state: Optional[str] = Field(index=True)
+    postal_code: Optional[str] = Field(index=True)
+    country: Optional[str] = Field(index=True)
 
     # Geocoding-related fields
     is_geocoded: bool = Field(default=False)
@@ -72,14 +75,27 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
 
     def clean(self):
 
-        self.address_1 = self.address_1.title().strip() if self.address_1 else None
-        self.address_2 = self.address_2.title().strip() if self.address_2 else None
-        self.city = self.city.title().strip() if self.city else None
-        self.postal_code = self.postal_code.strip() if self.postal_code else None
-        self.state = self.state.upper().strip() if self.state else None
-        self.country = self.country.upper().strip() if self.country else None
+        self.address_1 = (
+            clean_string_field(self.address_1.title()) if self.address_1 else None
+        )
+        self.address_2 = (
+            clean_string_field(self.address_2.title()) if self.address_2 else None
+        )
+        self.city = clean_string_field(self.city.title()) if self.city else None
+        self.postal_code = clean_string_field(self.postal_code)
+        self.state = clean_string_field(self.state).upper() if self.state else None
+        self.country = (
+            clean_string_field(self.country).upper() if self.country else None
+        )
 
         if str(self.state).lower() in US_STATES_TO_ABBREV:
             self.state = US_STATES_TO_ABBREV[str(self.state).lower()].upper()
+
+        if (
+            self.country is None
+            and self.state
+            and self.state.lower() in US_STATE_ABBREVIATIONS
+        ):
+            self.country = "UNITED STATES OF AMERICA"
 
         return self

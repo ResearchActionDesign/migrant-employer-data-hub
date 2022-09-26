@@ -1,9 +1,13 @@
+import re
 from logging.config import fileConfig
 
 from alembic import context
+from alembic.script import write_hooks
 from sqlalchemy import engine_from_config, pool
 # @see https://github.com/tiangolo/sqlmodel/issues/85
 from sqlmodel import SQLModel
+
+from db import get_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -27,10 +31,18 @@ from models.unique_employer import UniqueEmployer  # noqa
 
 target_metadata = SQLModel.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+
+# Hook to add sqlmodel dependency to auto-generated migrations
+@write_hooks.register("add_sqlmodel")
+def add_sqlmodel(filename, options):
+    lines = []
+    with open(filename) as file_:
+        for line in file_:
+            lines.append(line)
+            if line.startswith('import sqlalchemy as sa'):
+                lines.append('import sqlmodel')
+    with open(filename, "w") as to_write:
+        to_write.write("".join(lines))
 
 
 def run_migrations_offline() -> None:
@@ -64,11 +76,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = get_engine()
 
     with connectable.connect() as connection:
         context.configure(

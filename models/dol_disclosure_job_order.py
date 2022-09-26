@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from pydantic import AnyHttpUrl, condecimal, conint, constr
 from sqlmodel import Field, Relationship
 
-from constants import US_STATES_TO_ABBREV
+from constants import US_STATE_ABBREVIATIONS, US_STATES_TO_ABBREV
 from models.base import CaseStatus, DoLDataItem, DoLDataSource, clean_string_field
 from models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
@@ -206,5 +206,12 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
             self.employer_state = US_STATES_TO_ABBREV[
                 str(self.employer_state).lower()
             ].upper()
+
+        if (
+            not self.employer_country
+            and self.employer_state
+            and self.employer_state.lower() in US_STATE_ABBREVIATIONS
+        ):
+            self.employer_country = "UNITED STATES OF AMERICA"
 
         return self

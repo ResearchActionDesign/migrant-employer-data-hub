@@ -13,7 +13,7 @@ from models.employer_record import EmployerRecord
 from models.employer_record_address_link import AddressType
 
 
-class TestUpdateEmployerRecords(TestCase):
+class TestUpdateAddresses(TestCase):
     @pytest.fixture(autouse=True)
     def capsys(self, capsys):
         self.capsys = capsys
@@ -99,7 +99,7 @@ class TestUpdateEmployerRecords(TestCase):
         self.assertEqual(1, len(test_listing_3.address_records))
 
         self.assertEqual("Address 1 Test City, CA Test zip UNITED STATES OF AMERICA", str(test_listing.address_records[0]))
-        self.assertEqual("Test Address 123 Test City #2, NC 12345", str(test_listing.address_records[1]))
+        self.assertEqual("Test Address 123 Test City #2, NC 12345 UNITED STATES OF AMERICA", str(test_listing.address_records[1]))
 
         # Check that links are being created from Employer records to addresses.
         employer_1 = self.session.exec(select(EmployerRecord).where(EmployerRecord.name == 'Test business')).first()

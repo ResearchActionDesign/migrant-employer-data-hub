@@ -1,0 +1,101 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@3.1
+
+jobs:
+  install_dependencies:
+    docker:
+      - image: cimg/python:3.10.6-node
+
+    working_directory: ~/repo
+    environment:
+      PIPENV_VENV_IN_PROJECT: 1
+      PRE_COMMIT_HOME: ~/repo/.cache
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v4-dependencies-{{ checksum "Pipfile.lock" }}
+
+      - run:
+          name: install dependencies
+          command: |
+            pipenv sync --dev
+
+      - run:
+          name: install pre-commit
+          command: |
+            pipenv run pre-commit install
+
+      - save_cache:
+          paths:
+            - ./.venv
+          key: v4-dependencies-{{ checksum "Pipfile.lock" }}
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./*
+
+  back_end_test:
+    docker:
+      - image: cimg/python:3.10.6-node
+    resource_class: large
+    working_directory: ~/repo
+    environment:
+      PIPENV_VENV_IN_PROJECT: 1
+
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Run Django unit tests
+          command: pipenv run pytest
+
+  lint:
+    docker:
+      - image: cimg/python:3.10.6-node
+    working_directory: ~/repo
+    environment:
+      PIPENV_VENV_IN_PROJECT: 1
+      PRE_COMMIT_HOME: ~/repo/.cache
+
+    steps:
+      - attach_workspace:
+          at: ~/repo
+
+      - run:
+          name: Lint python code
+          command: pipenv run pre-commit run --all-files
+
+  deploy_ec2:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup:
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          aws-region: AWS_REGION
+
+workflows:
+  test:
+    jobs:
+      - install_dependencies
+      - lint:
+          requires:
+            - install_dependencies
+      - back_end_test:
+          requires:
+            - install_dependencies
+      - deploy_ec2:
+          requires:
+            - back_end_test
+            - lint
+          filters:
+            branches:
+              only:
+                main

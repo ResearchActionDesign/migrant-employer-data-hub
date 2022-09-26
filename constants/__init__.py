@@ -58,6 +58,8 @@ US_STATES_TO_ABBREV = {
     "u.s. virgin islands": "vi",
 }
 
+US_STATE_ABBREVIATIONS = US_STATES_TO_ABBREV.values()
+
 USER_AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "

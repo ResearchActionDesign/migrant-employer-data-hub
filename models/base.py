@@ -16,10 +16,10 @@ def clean_string_field(value: str | None) -> str | None:
     value = value.strip().strip('"').strip("'").strip()
 
     if value.lower() == "n/a":
-        value = None
+        return None
 
     if not value:
-        value = None
+        return None
     return value
 
 
