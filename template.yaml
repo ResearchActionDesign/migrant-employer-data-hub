@@ -10,14 +10,16 @@ Resources:
   HandleActionsFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: ./app
-      Handler: app.lambda_handler.lambda_handler
+      Architectures:
+        - arm64
+      PackageType: Image
       Role: !GetAtt CDMDataHubLambdaRole.Arn
-      Runtime: python3.9
       Environment:
         Variables:
           JOB_ORDER_PDF_DESTINATION: !Ref JobOrderPdfsBucket
-
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
 
   H2ADisclosureDatasetsBucket:
     Type: 'AWS::S3::Bucket'

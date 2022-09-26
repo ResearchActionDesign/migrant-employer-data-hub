@@ -1,0 +1,4 @@
+.aws-sam
+files
+.ssh
+.pytest_cache

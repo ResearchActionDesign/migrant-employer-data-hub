@@ -11,4 +11,10 @@ python -m alembic upgrade head
 ```
 
 ## Deploy to AWS Sam
+
+The lambda function is built within the container specified by `lambda.Dockerfile`.
+
+To build lambda function run `sam build`.
+
+To deploy run:
 `sam deploy --profile cdm`

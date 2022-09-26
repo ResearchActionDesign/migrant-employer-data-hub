@@ -7,6 +7,6 @@ s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-10eyc4nvnfgf2"
 s3_prefix = "cdm-data-hub"
 region = "us-east-2"
 profile = "cdm"
-confirm_changeset = true
+confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
-image_repositories = []
+image_repositories = ["HandleActionsFunction=304152466319.dkr.ecr.us-east-2.amazonaws.com/cdmdatahub57a99607/handleactionsfunction0528c234repo"]
