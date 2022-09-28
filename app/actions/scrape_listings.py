@@ -1,3 +1,4 @@
+import io
 import random
 import sys
 
@@ -145,7 +146,7 @@ def scrape_listings(max_records: int = 1):
             else:
                 saved_pdf = f"https://{settings.JOB_ORDER_PDF_DESTINATION}.s3.us-east-2.amazonaws.com/{listing.dol_id}.pdf"
                 s3_client.upload_fileobj(
-                    job_order_pdf.content,
+                    io.BytesIO(job_order_pdf.content),
                     settings.JOB_ORDER_PDF_DESTINATION,
                     f"{listing.dol_id}.pdf",
                 )

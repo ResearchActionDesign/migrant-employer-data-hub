@@ -26,3 +26,6 @@ On initial deploy you will need to do the following:
 ### Subsequent deployments
 1. Build the lambda function with `sam build`.
 2. Run `sam deploy --profile cdm`
+
+Note: The CloudFormation template is not reliably setting up S3 bucket triggers. You may find it easier to just add those via the AWS
+console UI.

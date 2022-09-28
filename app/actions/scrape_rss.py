@@ -15,7 +15,7 @@ from app.models.static_value import StaticValue
 from app.settings import DOL_ID_REGEX, ETAG_KEY, JOBS_RSS_FEED_URL, MODIFIED_KEY
 
 
-def scrape_rss(max_records: int = -1, skip_update: bool = False):
+def scrape_rss(max_records: int = -1, skip_update: bool = False) -> bool:
     """
     Scrape Seasonaljobs.dol.gov RSS feed for new job listings.
 
@@ -29,21 +29,21 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
     session = Session(get_engine())
 
     # Check for saved etag and modified keys
-    try:
-        etag_obj = session.exec(
-            select(StaticValue).where(StaticValue.key == ETAG_KEY)
-        ).first()
+    etag_obj = session.exec(
+        select(StaticValue).where(StaticValue.key == ETAG_KEY)
+    ).one_or_none()
+    if etag_obj:
         etag = etag_obj.value
-    except AttributeError:
+    else:
         etag_obj = StaticValue(key=ETAG_KEY)
         etag = None
 
-    try:
-        modified_obj = session.exec(
-            select(StaticValue).where(StaticValue.key == MODIFIED_KEY)
-        ).first()
+    modified_obj = session.exec(
+        select(StaticValue).where(StaticValue.key == MODIFIED_KEY)
+    ).one_or_none()
+    if modified_obj:
         modified = modified_obj.value
-    except AttributeError:
+    else:
         modified_obj = StaticValue(key=MODIFIED_KEY)
         modified = None
 
@@ -60,17 +60,18 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
 
         sys.stderr.write(msg)
         rollbar.report_message(msg, "error")
+        return False
 
     if rss_entries.get("status", False) not in [200, 301]:
         # Error code from feed scraper
         msg = f"RSS Feed status code: {rss_entries.get('status', False)}, not 200"
         sys.stderr.write(msg)
         rollbar.report_message(msg, "error")
-        return
+        return False
 
     if rss_entries.get("version", "") == "":
         print("RSS fetched, but no new entries")
-        return
+        return False
 
     processed_count = 0
     for entry in rss_entries.get("entries", []):
@@ -144,6 +145,7 @@ def scrape_rss(max_records: int = -1, skip_update: bool = False):
 
     session.commit()
     session.close()
+    return True
 
 
 if __name__ == "__main__":

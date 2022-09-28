@@ -68,6 +68,7 @@ def update_employer_records_from_disclosure_data(session: Session):
     from dol_disclosure_job_order where employer_record_id = employer_record.id group by employer_record_id)
     where exists (select last_seen from dol_disclosure_job_order where employer_record_id = employer_record.id and last_seen > employer_record.last_seen);"""
     session.exec(text(sql_query))
+    print("Updated employer records from Disclosure data")
 
 
 def update_employer_records_from_seasonal_jobs(session: Session):
@@ -128,6 +129,7 @@ def update_employer_records_from_seasonal_jobs(session: Session):
     from seasonal_jobs_job_order where employer_record_id = employer_record.id group by employer_record_id)
     where exists (select last_seen from seasonal_jobs_job_order where employer_record_id = employer_record.id and last_seen > employer_record.last_seen);"""
     session.exec(text(sql_query))
+    print("Updated employer records from Seasonal jobs data")
 
 
 def update_employer_records() -> bool:

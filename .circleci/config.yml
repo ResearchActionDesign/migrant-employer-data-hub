@@ -53,6 +53,9 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run:
+          name: Create job order PDFs directory
+          command: mkdir app/job-order-pdfs
+      - run:
           name: Run Django unit tests
           command: pipenv run pytest
 
@@ -95,7 +98,7 @@ jobs:
             cd cdm-data-hub \
             && git fetch origin \
             && git checkout $CIRCLE_SHA1 \
-            && pipenv install"
+            && /home/ec2-user/.local/bin/pipenv install"
 
 workflows:
   test:

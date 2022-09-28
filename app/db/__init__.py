@@ -2,6 +2,7 @@ import json
 import os
 
 import boto3
+from sqlalchemy.future import Engine
 from sqlmodel import SQLModel, create_engine, pool
 
 from app.settings import DB_ENGINE, DB_URL, ENVIRONMENT
@@ -41,7 +42,7 @@ elif DB_ENGINE == "postgres":
     )
 
 
-def get_engine(echo=False, yield_per=False, refresh=False):
+def get_engine(echo=False, yield_per=False, refresh=False) -> Engine:
     if refresh or not hasattr(get_engine, "engine"):
         get_engine.engine = create_engine(
             DB_URL,

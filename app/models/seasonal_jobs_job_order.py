@@ -6,8 +6,7 @@ from sqlalchemy_json import mutable_json_type
 from sqlmodel import Field, Relationship
 
 from app.constants import US_STATES_TO_ABBREV
-
-from .base import DoLDataItem, DoLDataSource
+from app.models.base import DoLDataItem, DoLDataSource, clean_string_field
 
 # Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
 if TYPE_CHECKING:
@@ -76,11 +75,7 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
         }
         for field_name, mapped_field_name in employer_fields.items():
             v = self.scraped_data.get(field_name, None)
-            if v is not None:
-                v = v.strip()
-            if v == "":
-                v = None
-            setattr(self, mapped_field_name, v)
+            setattr(self, mapped_field_name, clean_string_field(v))
 
         if str(self.employer_state).lower() in US_STATES_TO_ABBREV:
             self.employer_state = US_STATES_TO_ABBREV[
