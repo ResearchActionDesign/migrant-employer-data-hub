@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from sqlalchemy import null
 from sqlmodel import Session, select
@@ -33,7 +33,7 @@ def link_address_to_employer(
     first_seen: datetime,
     last_seen: datetime,
     source: DoLDataSource,
-):
+) -> None:
     """
     Link a single address to a single employer record, or update existing link if it exists.
     :param session
@@ -61,10 +61,13 @@ def link_address_to_employer(
 
     save_record = False
     if len(existing_links) == 1:
-        if existing_links[0].first_seen > first_seen:
+        if (
+            not existing_links[0].first_seen
+            or existing_links[0].first_seen > first_seen
+        ):
             existing_links[0].first_seen = first_seen
             save_record = True
-        if existing_links[0].last_seen < last_seen:
+        if not existing_links[0].last_seen or existing_links[0].last_seen < last_seen:
             existing_links[0].last_seen = last_seen
             save_record = True
 
@@ -82,13 +85,12 @@ def link_address_to_employer(
                 source=source,
             )
         )
-    return
 
 
 def check_for_matching_addresses(
     search_address: AddressRecord,
     session: Session,
-    local_addresses=None,
+    local_addresses: Union[List[AddressRecord], None] = None,
 ) -> List[AddressRecord]:
     """
     Checks the DB for addresses matching a given address.
@@ -123,8 +125,8 @@ def check_for_matching_addresses(
 def process_job_order(
     job_order: DolDisclosureJobOrder,
     session: Session,
-    local_addresses=None,
-) -> (DolDisclosureJobOrder, List[AddressRecord]):
+    local_addresses: Union[List[AddressRecord], None] = None,
+) -> Tuple[DolDisclosureJobOrder, List[AddressRecord]]:
     """
     Process addresses from a single job order.
 
@@ -209,7 +211,7 @@ def process_job_order(
     return (job_order, local_addresses)
 
 
-def update_addresses(max_records: int = -1):
+def update_addresses(max_records: int = -1) -> None:
     """
     Scan through DoL Disclosure table and create new records for each unique address, linked to the employer record.
 
@@ -232,7 +234,7 @@ def update_addresses(max_records: int = -1):
 
     job_orders_to_process = session.exec(statement)
 
-    local_addresses = []
+    local_addresses: List[AddressRecord] = []
     i = 0
     for job_order in job_orders_to_process:
         job_order, local_addresses = process_job_order(

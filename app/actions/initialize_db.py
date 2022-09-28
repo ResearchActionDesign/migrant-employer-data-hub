@@ -17,7 +17,7 @@ from app.models.unique_employer import UniqueEmployer  # noqa
 from app.settings import ALEMBIC_CONFIG_PATH
 
 
-def initialize_db():
+def initialize_db() -> None:
     SQLModel.metadata.create_all(get_engine())
 
     # then, load the Alembic configuration and generate the

@@ -9,7 +9,7 @@ from app.settings import DB_ENGINE
 IS_ = "IS" if DB_ENGINE == "sqlite" else "IS NOT DISTINCT FROM"
 
 
-def update_employer_records_from_disclosure_data(session: Session):
+def update_employer_records_from_disclosure_data(session: Session) -> None:
     # First, pull unique sets of employer name, trade name, etc.
     # from the disclosure records and assign those to new employer
     # records if there aren't already matching employer records.
@@ -71,7 +71,7 @@ def update_employer_records_from_disclosure_data(session: Session):
     print("Updated employer records from Disclosure data")
 
 
-def update_employer_records_from_seasonal_jobs(session: Session):
+def update_employer_records_from_seasonal_jobs(session: Session) -> None:
     # First, pull unique sets of employer name, trade name, etc.
     # from the disclosure records and assign those to new employer
     # records if there aren't already matching employer records.

@@ -67,13 +67,13 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
         ]
         return " ".join([v for v in values_dict if v]).strip()
 
-    def is_null(self):
+    def is_null(self) -> bool:
         return str(self).strip() == ""
 
-    def get_geocode_hash(self):
+    def get_geocode_hash(self) -> hashlib._Hash:
         return hashlib.md5(str(self).encode())
 
-    def clean(self):
+    def clean(self) -> "AddressRecord":
 
         self.address_1 = (
             clean_string_field(self.address_1.title()) if self.address_1 else None

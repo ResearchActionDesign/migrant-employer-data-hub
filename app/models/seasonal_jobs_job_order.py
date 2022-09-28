@@ -51,7 +51,7 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
     # This field isn't exposed on the seasonaljobs listings, but we need it for dedupe.
     employer_country: Optional[str] = Field(default="UNITED STATES OF AMERICA")
 
-    def clean(self):
+    def clean(self) -> "SeasonalJobsJobOrder":
         # Check that the url field in scraped_data is not invalid.
         if not self.scraped_data:
             return self

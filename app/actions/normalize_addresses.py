@@ -7,7 +7,7 @@ from app.models.address_record import AddressRecord
 from app.settings import ROWS_BEFORE_COMMIT
 
 
-def normalize_addresses(batch_num=-1):
+def normalize_addresses(batch_num: int = -1) -> bool:
     """
     Parse through all addresses in the address table and add the normalized_address field if it is missing.
 
@@ -46,6 +46,7 @@ def normalize_addresses(batch_num=-1):
                 session.commit()
 
         session.commit()
+    return True
 
 
 if __name__ == "__main__":

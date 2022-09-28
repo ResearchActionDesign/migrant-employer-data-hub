@@ -175,7 +175,7 @@ alternate_col_names = {
 s3_client = boto3.client("s3")
 
 
-def row_to_dict(header_row: List[str], row: List):
+def row_to_dict(header_row: List[str], row: List) -> dict:
     output_dict = {}
     for i, k in enumerate(header_row):
         if k:
@@ -299,6 +299,10 @@ def process_imports() -> bool:
     session.close()
 
     finished = False
+
+    if import_to_do is None:
+        return False
+
     if import_to_do.bucket_name:
         finished = import_disclosure(
             bucket_name=import_to_do.bucket_name, object_name=import_to_do.object_name
@@ -320,7 +324,7 @@ def add_new_import(
     filename: Union[str, None] = None,
     bucket_name: Union[str, None] = None,
     object_name: Union[str, None] = None,
-):
+) -> bool:
     """
     Adds a new import that needs to be done.
     :param filename:
@@ -335,6 +339,7 @@ def add_new_import(
     session.add(import_to_do)
     session.commit()
     session.close()
+    return True
 
 
 if __name__ == "__main__":

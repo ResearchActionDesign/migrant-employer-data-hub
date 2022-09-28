@@ -18,7 +18,7 @@ from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
 s3_client = boto3.client("s3")
 
 
-def scrape_listings(max_records: int = 1):
+def scrape_listings(max_records: int = 1) -> bool:
     """
     Scrape a detailed listing from SeasonalJobs azure server.
 
@@ -42,7 +42,7 @@ def scrape_listings(max_records: int = 1):
 
     if len(unscraped_listings) == 0:
         print("No listings left to scrape!")
-        return
+        return False
 
     scraped_count = 0
     for listing in unscraped_listings:
@@ -176,6 +176,7 @@ def scrape_listings(max_records: int = 1):
                 f"{scraped_count} - Failed job order PDF request for listing ID {listing.dol_id}, url {pdf_url}"
             )
     session.close()
+    return True
 
 
 if __name__ == "__main__":

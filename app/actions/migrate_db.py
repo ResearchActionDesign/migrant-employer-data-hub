@@ -4,7 +4,7 @@ from alembic.config import Config  # noqa
 from app.settings import ALEMBIC_CONFIG_PATH
 
 
-def migrate_db():
+def migrate_db() -> None:
     alembic_cfg = Config(ALEMBIC_CONFIG_PATH)
     command.upgrade(alembic_cfg, "head")
 

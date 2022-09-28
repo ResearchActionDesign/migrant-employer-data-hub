@@ -7,7 +7,7 @@ This part of the code uses raw sqlalchemy rather than SQLModel in order to be ab
 
 import os
 from datetime import datetime
-from typing import Iterable
+from typing import Generator, Iterable, Tuple, Union
 
 import dedupe
 from dedupe.api import DedupeMatching
@@ -47,7 +47,9 @@ DEDUPE_CLUSTER_REVIEW_THRESHOLD = (
 )
 
 
-def employer_record_pairs(result_set: Iterable):
+def employer_record_pairs(
+    result_set: Iterable,
+) -> Generator[Tuple[Tuple[int, dict], Tuple[int, dict]], None, None]:
     for _, row in enumerate(result_set):
         employer_a = (
             row.left_id,
@@ -75,7 +77,7 @@ def employer_record_pairs(result_set: Iterable):
         yield employer_a, employer_b
 
 
-def cluster_ids(clustered_dupes):
+def cluster_ids(clustered_dupes) -> Generator[dict[str, Union[int, float]], None, None]:
     for cluster, scores in clustered_dupes:
         cluster_id = cluster[0]
         for employer_record_id, score in zip(cluster, scores):
@@ -86,7 +88,7 @@ def cluster_ids(clustered_dupes):
             }
 
 
-def get_employer_record_table(engine):
+def get_employer_record_table(engine) -> Table:
     if not hasattr(get_employer_record_table, "employer_record_table"):
         get_employer_record_table.employer_record_table = Table(
             "employer_record", EmployerRecord.metadata, autoload_with=engine
@@ -94,7 +96,7 @@ def get_employer_record_table(engine):
     return get_employer_record_table.employer_record_table
 
 
-def get_cluster_table(engine):
+def get_cluster_table(engine) -> Table:
     if not hasattr(get_cluster_table, "table"):
         get_cluster_table.table = Table(
             "dedupe_entity_map", DedupeEntityMap.metadata, autoload_with=engine
@@ -159,7 +161,7 @@ def interactively_train_model() -> DedupeMatching:
     return deduper
 
 
-def build_cluster_table(refresh: bool = False):
+def build_cluster_table(refresh: bool = False) -> bool:
     """
     Dedupe records based on existing settings file (which must have been created from training set).
 
@@ -284,9 +286,10 @@ def build_cluster_table(refresh: bool = False):
     conn.commit()
     print("Finished writing results")
     conn.close()
+    return True
 
 
-def review_clusters(limit=5):
+def review_clusters(limit=5) -> None:
     """
     Interactively review low-confidence clusters to mark if they should be included or not.
     :return:
@@ -400,7 +403,7 @@ def review_clusters(limit=5):
     conn.close()
 
 
-def process_single_cluster(cluster, cluster_table, engine, conn):
+def process_single_cluster(cluster, cluster_table, engine, conn) -> None:
     session = Session(engine)
 
     employer_record_table = get_employer_record_table(engine)
@@ -482,7 +485,7 @@ def process_single_cluster(cluster, cluster_table, engine, conn):
     session.close()
 
 
-def generate_canonical_employers_from_non_clustered_records():
+def generate_canonical_employers_from_non_clustered_records() -> None:
     engine = get_engine()
     session = Session(engine)
 
@@ -527,7 +530,7 @@ def generate_canonical_employers_from_non_clustered_records():
     session.close()
 
 
-def generate_canonical_employers_from_clusters(batch_limit=500):
+def generate_canonical_employers_from_clusters(batch_limit: int = 500) -> None:
     """
     Iterate through all clusters with confidence > 0.8 or those which
     have been manually reviewed. For each group of nodes, generate a canonical

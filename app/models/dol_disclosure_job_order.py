@@ -187,7 +187,7 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     addendum_c_attached: Optional[bool]
     total_addendum_a_records: Optional[conint(ge=0)]
 
-    def clean(self):
+    def clean(self) -> "DolDisclosureJobOrder":
         if self.trade_name_dba:
             self.trade_name_dba = re.sub(
                 r"^(DBA|BDA|dba|dba:|d\/b\/a) ", "", self.trade_name_dba
