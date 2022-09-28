@@ -56,7 +56,7 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
     lat: Optional[float]
     lon: Optional[float]
 
-    def __str__(self):
+    def __str__(self) -> str:
         values_dict = [
             self.address_1,
             self.address_2,
@@ -70,7 +70,7 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
     def is_null(self) -> bool:
         return str(self).strip() == ""
 
-    def get_geocode_hash(self) -> hashlib._Hash:
+    def get_geocode_hash(self) -> str:  # TODO: fix
         return hashlib.md5(str(self).encode())
 
     def clean(self) -> "AddressRecord":

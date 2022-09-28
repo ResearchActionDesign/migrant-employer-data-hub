@@ -54,7 +54,7 @@ def get_engine(echo=False, yield_per=False, refresh=False) -> Engine:
     return get_engine.engine
 
 
-def get_mock_engine():
+def get_mock_engine() -> Engine:
     from app.models.address_record import AddressRecord  # noqa
     from app.models.dedupe_entity_map import DedupeEntityMap  # noqa
     from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa

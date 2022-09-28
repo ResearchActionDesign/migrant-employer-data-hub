@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Generator, Iterable, Tuple, Union
 
 import dedupe
-from dedupe.api import DedupeMatching
 from prettytable import PrettyTable
 from sqlalchemy import (
     MetaData,
@@ -30,6 +29,7 @@ from sqlmodel import select as sqlmodel_select
 from app.db import get_engine
 from app.models.dedupe_blocking_map import DedupeBlockingMap
 from app.models.dedupe_entity_map import DedupeEntityMap
+from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from app.models.employer_record import EmployerRecord
 from app.models.unique_employer import UniqueEmployer
 from app.settings import ROWS_BEFORE_COMMIT
@@ -104,7 +104,7 @@ def get_cluster_table(engine) -> Table:
     return get_cluster_table.table
 
 
-def interactively_train_model() -> DedupeMatching:
+def interactively_train_model() -> None:
     fields = [
         {"field": "name", "type": "Name"},
         {"field": "trade_name_dba", "type": "Name", "has_missing": True},
@@ -157,8 +157,6 @@ def interactively_train_model() -> DedupeMatching:
         deduper.write_settings(sf)
     deduper.cleanup_training()
     conn.close()
-
-    return deduper
 
 
 def build_cluster_table(refresh: bool = False) -> bool:
@@ -368,14 +366,15 @@ def review_clusters(limit=5) -> None:
         print("Cluster members:")
         print(table_printer)
 
-        print(
+        prompt = (
             "Does the starred row belong in the cluster?\n(y)es (n)o (u)nsure    (q)uit"
         )
+        print(prompt)
         i = input()
         valid_responses = ["y", "n", "u", "q"]
 
         while i not in valid_responses:
-            print("Does this row belong in the cluster?\n(y)es (n)o (u)nsure")
+            print(prompt)
             i = input()
 
         timestamp = datetime.now()
@@ -628,8 +627,8 @@ def generate_canonical_employers_from_clusters(batch_limit: int = 500) -> None:
 
 
 if __name__ == "__main__":
-    # deduper_obj = interactively_train_model()
+    # interactively_train_model()
     # build_cluster_table()
     # review_clusters()
-    generate_canonical_employers_from_non_clustered_records()
+    # generate_canonical_employers_from_non_clustered_records()
     generate_canonical_employers_from_clusters()

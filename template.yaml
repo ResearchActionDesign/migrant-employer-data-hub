@@ -362,6 +362,9 @@ Resources:
           - Effect: Allow
             Principal: { Service: [ lambda.amazonaws.com ] }
             Action: [ 'sts:AssumeRole' ]
+          - Effect: Allow
+            Principal: { Service: [ ec2.amazonaws.com ] }
+            Action: [ 'sts:AssumeRole' ]
       Path: /
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
@@ -389,11 +392,11 @@ Resources:
                   - 'logs:PutLogEvents'
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
-                  - 'ec2:CreateNetworkInterface'
-                  - 'ec2:DescribeNetworkInterfaces'
-                  - 'ec2:DeleteNetworkInterface'
-                  - 'ec2:AssignPrivateIpAddresses'
-                  - 'ec2:UnassignPrivateIpAddresses'
+#                  - 'ec2:CreateNetworkInterface'
+#                  - 'ec2:DescribeNetworkInterfaces'
+#                  - 'ec2:DeleteNetworkInterface'
+#                  - 'ec2:AssignPrivateIpAddresses'
+#                  - 'ec2:UnassignPrivateIpAddresses'
                 Resource: '*'
               - Effect: Allow
                 Action:
