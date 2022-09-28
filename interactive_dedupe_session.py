@@ -20,6 +20,9 @@ if __name__ == "__main__":
             i = input("Enter action: ")
 
         if i == "t":
+            print(
+                "Analyzing records to generate training set (this may take a while)..."
+            )
             dedupe_employer_records.interactively_train_model()
             print("Finished training, building cluster table...")
             dedupe_employer_records.build_cluster_table()

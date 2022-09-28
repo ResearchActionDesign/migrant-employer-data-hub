@@ -31,3 +31,11 @@ ROLLBAR_ENABLED = False
 if token != "missing_api_key":
     rollbar.init(token, ENVIRONMENT)
     ROLLBAR_ENABLED = True
+
+# Model parameters
+TRAINING_SAMPLE_SIZE = 2500
+TRAINING_RECALL_PERCENT = 0.9
+DEDUPE_CLUSTERING_THRESHOLD = 0.6
+DEDUPE_CLUSTER_REVIEW_THRESHOLD = (
+    0.8  # Anything below this threshold or at it gets reviewed.
+)

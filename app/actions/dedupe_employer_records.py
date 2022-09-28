@@ -32,19 +32,17 @@ from app.models.dedupe_entity_map import DedupeEntityMap
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from app.models.employer_record import EmployerRecord
 from app.models.unique_employer import UniqueEmployer
-from app.settings import ROWS_BEFORE_COMMIT
+from app.settings import (
+    DEDUPE_CLUSTER_REVIEW_THRESHOLD,
+    DEDUPE_CLUSTERING_THRESHOLD,
+    ROWS_BEFORE_COMMIT,
+    TRAINING_RECALL_PERCENT,
+    TRAINING_SAMPLE_SIZE,
+)
 
 # TODO: Load these from somewhere stable -- S3?
 settings_file = "pgsql_big_dedupe_example_settings"
 training_file = "pgsql_big_dedupe_example_training.json"
-
-# Model parameters
-TRAINING_SAMPLE_SIZE = 5000
-TRAINING_RECALL_PERCENT = 0.9
-DEDUPE_CLUSTERING_THRESHOLD = 0.6
-DEDUPE_CLUSTER_REVIEW_THRESHOLD = (
-    0.8  # Anything below this threshold or at it gets reviewed.
-)
 
 
 def employer_record_pairs(
