@@ -16,6 +16,7 @@ from app.models.employer_record_address_link import (
     AddressType,
     EmployerRecordAddressLink,
 )
+from app.settings import ROWS_BEFORE_COMMIT
 
 
 def title_case_or_none(obj: Union[str, None]) -> Union[str, object]:
@@ -132,6 +133,10 @@ def process_job_order(
     :return:
     """
     # First, check for matching office addresses.
+
+    # TODO: Compute/store normalized address, match by normalizd address.
+    # TODO: local_addresses as dict of normalized address -> object.
+
     if local_addresses is None:
         local_addresses = []
     office_address = AddressRecord(
@@ -235,7 +240,7 @@ def update_addresses(max_records: int = -1):
         )
         session.add(job_order)
         i += 1
-        if i % 250 == 0:
+        if i % ROWS_BEFORE_COMMIT == 0:
             print(f"Processed {i} job orders for addresses")
             session.commit()
 

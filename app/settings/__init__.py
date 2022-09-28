@@ -1,7 +1,7 @@
 import os
 import re
-import urllib.parse
 
+import rollbar
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
@@ -20,30 +20,14 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 ROWS_BEFORE_COMMIT = 100
 
 SQLITE_FILE_NAME = "test_database.db"
-DB_URL = f"sqlite:///{BASE_DIR}/{SQLITE_FILE_NAME}"
-DB_ENGINE = os.getenv("DATABASE_ENGINE", "sqlite")
+DB_URL = f"sqlite:///{BASE_DIR}/../{SQLITE_FILE_NAME}"
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite")
 
-if DB_ENGINE == "postgres" and ENVIRONMENT == "lambda":
-    import boto3
+ALEMBIC_CONFIG_PATH = f"{BASE_DIR}/../alembic.ini"
 
-    session = boto3.Session(profile_name="cdm")
-    client = session.client("rds")
-    token = client.generate_db_auth_token(
-        DBHostname=os.getenv("RDS_HOSTNAME"),
-        Port=5432,
-        DBUsername=os.getenv("POSTGRES_USER", "postgres"),
-        Region=os.getenv("AWS_REGION", ""),
-    )
-    DB_URL = (
-        f"postgresql://{os.getenv('POSTGRES_USER', 'postgres')}:"
-        f"{urllib.parse.quote_plus(token)}@{os.getenv('RDS_HOSTNAME')}:5432/postgres"
-    )
+token = ROLLBAR_KEY
+ROLLBAR_ENABLED = False
 
-elif DB_ENGINE == "postgres":
-    DB_URL = (
-        f"postgresql://{os.getenv('POSTGRES_USER', 'postgres')}:"
-        f"{os.getenv('POSTGRES_PASSWORD', 'postgres')}"
-        f"@{os.getenv('POSTGRES_URL', '0.0.0.0')}:{os.getenv('POSTGRES_PORT', '15432')}"
-    )
-
-ALEMBIC_CONFIG_PATH = f"{BASE_DIR}/alembic.ini"
+if token != "missing_api_key":
+    rollbar.init(token, ENVIRONMENT)
+    ROLLBAR_ENABLED = True

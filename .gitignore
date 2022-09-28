@@ -142,7 +142,7 @@ cython_debug/
 
 .idea/
 
-files/
+app/files/
 
 function.zip
 

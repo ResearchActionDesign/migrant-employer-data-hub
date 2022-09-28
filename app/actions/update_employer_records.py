@@ -130,7 +130,7 @@ def update_employer_records_from_seasonal_jobs(session: Session):
     session.exec(text(sql_query))
 
 
-def update_employer_records():
+def update_employer_records() -> bool:
     """
     Find new unique employer name/city/state/phone combos and add then to the employer records list.
     """
@@ -144,6 +144,7 @@ def update_employer_records():
     update_employer_records_from_seasonal_jobs(session)
     session.commit()
     session.close()
+    return True
 
 
 if __name__ == "__main__":

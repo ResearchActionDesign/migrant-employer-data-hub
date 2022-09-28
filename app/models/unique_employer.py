@@ -31,6 +31,8 @@ class UniqueEmployer(DoLDataItemWithoutSourceOrId, table=True):
     country: Optional[str]
     phone: Optional[str]
 
+    # TODO: Populate with industry, NAICS code?
+
     # Relationships to other records
     employer_records: List["EmployerRecord"] = Relationship(  # noqa
         back_populates="unique_employer"

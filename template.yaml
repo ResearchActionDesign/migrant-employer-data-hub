@@ -5,30 +5,123 @@ Description: |
   SAM Template for CDM data hub
 Globals:
   Function:
-    Timeout: 300
+    Timeout: 900
 Resources:
-  HandleActionsFunction:
+  AddNewImportFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
       Architectures:
         - arm64
       PackageType: Image
       Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
       Environment:
         Variables:
-          JOB_ORDER_PDF_DESTINATION: !Ref JobOrderPdfsBucket
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'add_new_import'
+
+  ImportDisclosureFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'import_disclosure'
+
+  ScrapeRssFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'scrape_rss'
+
+  ScrapeListingsFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          JOB_ORDER_PDF_DESTINATION: !Ref JobOrderPdfsBucket
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'scrape_listings'
+
+  UpdateEmployerRecordsFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'update_employer_records'
 
   H2ADisclosureDatasetsBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: 'h2a-disclosure-datasets'
-#      NotificationConfiguration:
-#        LambdaConfigurations:
-#          - Event: 's3:ObjectCreated:*'
-#            Function: !GetAtt HandleActionsFunction.Arn
 
   JobOrderPdfsBucket:
     Type: 'AWS::S3::Bucket'
@@ -39,14 +132,226 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: 'dedupe-config'
-#
-#  LambdaExecutionpermission:
-#    Type: 'AWS::Lambda::Permission'
+
+  ImportDisclosureRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(30 minutes)"
+      Targets:
+        - Arn: !GetAtt 'ImportDisclosureFunction.Arn'
+          Id: 'ImportDisclosureFunction'
+
+  ScrapeRssRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(30 minutes)"
+      Targets:
+        - Arn: !GetAtt 'ScrapeRssFunction.Arn'
+          Id: 'ScrapeRssFunction'
+
+  ScrapeListingsRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(10 minutes)"
+      Targets:
+        - Arn: !GetAtt 'ScrapeListingsFunction.Arn'
+          Id: 'ScrapeListingsFunction'
+
+  UpdateEmployerRecordsRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(30 minutes)" # TODO: Decrease this to 1-2x daily
+      Targets:
+        - Arn: !GetAtt 'UpdateEmployerRecordsFunction.Arn'
+          Id: 'UpdateEmployerRecordsFunction'
+
+  ImportDisclosureLambdaExecutionpermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "ImportDisclosureFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'ImportDisclosureRule.Arn'
+
+  ScrapeRssLambdaExecutionPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "ScrapeRssFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'ScrapeRssRule.Arn'
+
+  ScrapeListingsLambdaExecutionPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "ScrapeListingsFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'ScrapeListingsRule.Arn'
+
+  UpdateEmployerRecordsLambdaExecutionPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "UpdateEmployerRecordsFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'UpdateEmployerRecordsRule.Arn'
+
+  S3LambdaExecutionpermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "AddNewImportFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 's3.amazonaws.com'
+      SourceArn: 'arn:aws:s3:::h2a-disclosure-datasets'
+
+  # @see https://aws.amazon.com/blogs/mt/resolving-circular-dependency-in-provisioning-of-amazon-s3-buckets-with-aws-lambda-event-notifications/
+  ApplyBucketNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Dummy function, just logs the received event
+      Handler: index.handler
+      Runtime: python3.9
+      Role: !GetAtt 'ApplyNotificationFunctionRole.Arn'
+      Timeout: 240
+      Code:
+        ZipFile: |
+          import boto3
+          import logging
+          import json
+          import cfnresponse
+
+          s3Client = boto3.client('s3')
+          logger = logging.getLogger()
+          logger.setLevel(logging.DEBUG)
+
+          def addBucketNotification(bucketName, notificationId, functionArn):
+            notificationResponse = s3Client.put_bucket_notification_configuration(
+              Bucket=bucketName,
+              NotificationConfiguration={
+                'LambdaFunctionConfigurations': [
+                  {
+                    'Id': notificationId,
+                    'LambdaFunctionArn': functionArn,
+                    'Events': [
+                      's3:ObjectCreated:*'
+                    ]
+                  },
+                ]
+              }
+            )
+            return notificationResponse
+
+          def create(properties, physical_id):
+            bucketName = properties['S3Bucket']
+            notificationId = properties['NotificationId']
+            functionArn = properties['FunctionARN']
+            response = addBucketNotification(bucketName, notificationId, functionArn)
+            logger.info('AddBucketNotification response: %s' % json.dumps(response))
+            return cfnresponse.SUCCESS, physical_id
+
+          def update(properties, physical_id):
+            return cfnresponse.SUCCESS, None
+
+          def delete(properties, physical_id):
+            return cfnresponse.SUCCESS, None
+
+          def handler(event, context):
+            logger.info('Received event: %s' % json.dumps(event))
+
+            status = cfnresponse.FAILED
+            new_physical_id = None
+
+            try:
+              properties = event.get('ResourceProperties')
+              physical_id = event.get('PhysicalResourceId')
+
+              status, new_physical_id = {
+                'Create': create,
+                'Update': update,
+                'Delete': delete
+              }.get(event['RequestType'], lambda x, y: (cfnresponse.FAILED, None))(properties, physical_id)
+            except Exception as e:
+              logger.error('Exception: %s' % e)
+              status = cfnresponse.FAILED
+            finally:
+              cfnresponse.send(event, context, status, {}, new_physical_id)
+
+  ApplyNotificationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies:
+        - PolicyName: S3BucketNotificationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowBucketNotification
+                Effect: Allow
+                Action: s3:PutBucketNotification
+                Resource:
+                  - !Sub 'arn:aws:s3:::${H2ADisclosureDatasetsBucket}'
+                  - !Sub 'arn:aws:s3:::${H2ADisclosureDatasetsBucket}/*'
+
+  ApplyNotification:
+    Type: Custom::ApplyNotification
+    Properties:
+      ServiceToken: !GetAtt 'ApplyBucketNotificationFunction.Arn'
+      S3Bucket: !Ref 'H2ADisclosureDatasetsBucket'
+      FunctionARN: "AddNewImportFunction"
+      NotificationId: S3ObjectCreatedEvent
+
+# TODO
+#  DedupeTerminalInstance:
+#    Type: 'AWS::EC2::Instance'
 #    Properties:
-#      FunctionName: !GetAtt HandleActionsFunction.Arn
-#      Action: 'lambda:InvokeFunction'
-#      Principal: 's3.amazonaws.com'
-#      SourceArn: 'arn:aws:s3:::h2a-disclosure-datasets'
+#      UserData: !Base64
+#        'Fn::Join':
+#          - ''
+#          - - IPAddress=
+#            - !Ref IPAddress
+#      InstanceType: 't2.micro'
+#      SecurityGroups:
+#        - !Ref DedupeTerminalInstanceSecurityGroup
+#      KeyName: !Ref KeyName
+#      ImageId: !FindInMap
+#        - AWSRegionArch2AMI
+#        - !Ref 'AWS::Region'
+#        - !FindInMap
+#          - AWSInstanceType2Arch
+#          - !Ref InstanceType
+#          - Arch
+#
+#  DedupeTerminalInstanceSecurityGroup:
+#    Type: 'AWS::EC2::SecurityGroup'
+#    Properties:
+#      GroupDescription: Enable SSH access
+#      SecurityGroupIngress:
+#        - IpProtocol: tcp
+#          FromPort: '22'
+#          ToPort: '22'
+#          CidrIp: '0.0.0.0/0'
+#
+#  IPAddress:
+#    Type: 'AWS::EC2::EIP'
+#  IPAssoc:
+#    Type: 'AWS::EC2::EIPAssociation'
+#    Properties:
+#      InstanceId: !Ref DedupeTerminalInstance
+#      EIP: !Ref IPAddress
 
   CDMDataHubLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -84,12 +389,13 @@ Resources:
                   - 'logs:PutLogEvents'
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
-                Resource: 'arn:aws:logs:*:*:*'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:AssignPrivateIpAddresses'
+                  - 'ec2:UnassignPrivateIpAddresses'
+                Resource: '*'
               - Effect: Allow
                 Action:
-                  - 'rds-db:connect'
-                Resource:
-                  - !Sub
-                    - 'arn:aws:rds-db:us-east-2:${AccountId}:dbuser:${DbName}/lambda_user'
-                    - AccountId: '{{resolve:ssm:account-id}}'
-                      DbName:  '{{resolve:ssm:cdm-data-hub-rds}}'
+                  - 'secretsManager:GetSecretValue'
+                Resource: '*'

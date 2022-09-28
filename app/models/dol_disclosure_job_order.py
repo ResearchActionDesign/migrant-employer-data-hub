@@ -34,12 +34,17 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
     file_name: Optional[str]
     file_row: Optional[int]
 
+    # TODO: add visa class
+
     # Override parent fields
     first_seen: Optional[datetime] = Field(sa_column=sa.Column(sa.DateTime))
     last_seen: Optional[datetime] = Field(
         sa_column=sa.Column(sa.DateTime, onupdate=datetime.utcnow)
     )
     source = Field(default=DoLDataSource.dol_disclosure)
+
+    # Additional generated fields
+    visa_class: Optional[str]
 
     # Fields from the DoL Spreadsheet
     case_number: Optional[str] = Field(index=True)

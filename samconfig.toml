@@ -9,4 +9,4 @@ region = "us-east-2"
 profile = "cdm"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
-image_repositories = ["HandleActionsFunction=304152466319.dkr.ecr.us-east-2.amazonaws.com/cdmdatahub57a99607/handleactionsfunction0528c234repo"]
+resolve_image_repos = true

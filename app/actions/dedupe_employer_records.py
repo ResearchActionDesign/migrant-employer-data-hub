@@ -32,6 +32,7 @@ from app.models.dedupe_blocking_map import DedupeBlockingMap
 from app.models.dedupe_entity_map import DedupeEntityMap
 from app.models.employer_record import EmployerRecord
 from app.models.unique_employer import UniqueEmployer
+from app.settings import ROWS_BEFORE_COMMIT
 
 # TODO: Load these from somewhere stable -- S3?
 settings_file = "pgsql_big_dedupe_example_settings"
@@ -516,7 +517,8 @@ def generate_canonical_employers_from_non_clustered_records():
         session.add(e)
         i += 1
 
-        if i % 100 == 0:
+        if i % ROWS_BEFORE_COMMIT == 0:
+            print(f"Added {i} new employers from non-clustered records.")
             session.commit()
 
     if i > 0:

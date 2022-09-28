@@ -23,6 +23,7 @@ from app.models.dedupe_entity_map import DedupeEntityMap  # noqa
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from app.models.employer_record import EmployerRecord  # noqa
 from app.models.employer_record_address_link import EmployerRecordAddressLink  # noqa
+from app.models.imported_dataset import ImportedDataset  # noqa
 from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder  # noqa
 from app.models.static_value import StaticValue  # noqa
 from app.models.unique_employer import UniqueEmployer  # noqa

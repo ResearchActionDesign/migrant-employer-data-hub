@@ -1,12 +1,17 @@
-from typing import List
+import io
+from sys import stderr
+from typing import List, Union
 
+import boto3
 from openpyxl import load_workbook
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app import settings
 from app.db import get_engine
 from app.models.base import DoLDataSource
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
+from app.models.imported_dataset import ImportedDataset, ImportStatus
 
 valid_col_names = (
     "case_number",
@@ -167,6 +172,8 @@ alternate_col_names = {
     "basic_unit_of_pay": "per",
 }
 
+s3_client = boto3.client("s3")
+
 
 def row_to_dict(header_row: List[str], row: List):
     output_dict = {}
@@ -176,26 +183,67 @@ def row_to_dict(header_row: List[str], row: List):
     return output_dict
 
 
-def import_disclosure(filename: str):
+def import_disclosure(
+    filename: Union[str, None] = None,
+    bucket_name: Union[str, None] = None,
+    object_name: Union[str, None] = None,
+) -> bool:
     """
     Import a DoL disclosure file spreadsheet
     :param filename: Filename to import
     :return:
     """
+    if not filename and (not bucket_name or not object_name):
+        stderr.write("No valid parameters specified.")
+        return False
+
+    file_id = filename or object_name
+
+    if file_id is None:
+        stderr.write("No valid parameters specified.")
+        return False
 
     # Check if this has already been imported and exit if it has been.
     session = Session(get_engine())
-    exist_rows = session.exec(
-        select(DolDisclosureJobOrder).where(DolDisclosureJobOrder.file_name == filename)
-    ).first()
-    if exist_rows:
-        print(f"Filename {filename} has already been imported! Quitting.")
-        return
 
-    wb = load_workbook(
-        filename=filename, read_only=True, keep_links=False, data_only=True
-    )
+    visa_class = None
+    if "h-2a" in file_id.lower() and "h-2b" not in file_id.lower():
+        visa_class = "H-2A"
+    elif "h-2b" in file_id.lower() and "h-2a" not in file_id.lower():
+        visa_class = "H-2B"
+    # TODO: other visa types.
+
+    if not filename:
+        f = io.BytesIO()
+        s3_client.download_fileobj(Bucket=bucket_name, Key=object_name, Fileobj=f)
+        wb = load_workbook(filename=f, read_only=True, keep_links=False, data_only=True)
+
+    else:
+        wb = load_workbook(
+            filename=filename, read_only=True, keep_links=False, data_only=True
+        )
+
     worksheet = wb.active
+
+    import_count = session.exec(
+        select(func.max(DolDisclosureJobOrder.file_row)).where(
+            DolDisclosureJobOrder.file_name == file_id
+        )
+    ).first()
+
+    if import_count and import_count + 1 >= worksheet.max_row:
+        print(f"File {file_id} has already been imported! Quitting.")
+        return True
+
+    if import_count:
+        print(
+            f"File {file_id} has already been started, continuing partial import with row {import_count + 1}"
+        )
+
+    else:
+        import_count = 0
+
+    print(f"Importing {file_id}")
 
     # Process header row and filter out for only valid column names.
     header_row = worksheet[1]
@@ -203,33 +251,91 @@ def import_disclosure(filename: str):
     for i, name in enumerate(col_names):
         if name not in valid_col_names:
             if name not in alternate_col_names:
+                print("Missing column names:")
                 print(f"'{name}': '',")
             col_names[i] = alternate_col_names.get(name)
 
-    count = 0
+    count = import_count
 
-    for row in worksheet.iter_rows(min_row=2, values_only=True):
+    for row in worksheet.iter_rows(
+        min_row=(import_count + 2 if import_count else 2), values_only=True
+    ):
         values = row_to_dict(col_names, row)
 
         session.add(
             DolDisclosureJobOrder(
                 source=DoLDataSource.dol_disclosure,
-                file_name=filename,
+                file_name=file_id,
                 file_row=count + 1,
                 first_seen=values["received_date"],
                 last_seen=values["received_date"],
+                visa_class=visa_class,
                 **values,
             ).clean()
         )
         count += 1
 
         if count % settings.ROWS_BEFORE_COMMIT == 0:
+            print(f"{count} listings imported from file {file_id}")
             session.commit()
 
     session.commit()
     session.close()
-    print(f"{count} listings imported from file {filename}")
+    print(f"{count} listings imported from file {file_id}")
+    return True
+
+
+def process_imports() -> bool:
+    """
+    Query the DB to see if there are any imports which need to be processed; and call import_disclosure if so.
+    :return:
+    """
+    session = Session(get_engine())
+    import_to_do = session.exec(
+        select(ImportedDataset).where(
+            ImportedDataset.import_status == ImportStatus.needs_importing
+        )
+    ).first()
+    session.close()
+
+    finished = False
+    if import_to_do.bucket_name:
+        finished = import_disclosure(
+            bucket_name=import_to_do.bucket_name, object_name=import_to_do.object_name
+        )
+    else:
+        finished = import_disclosure(filename=import_to_do.object_name)
+
+    if finished:
+        session = Session(get_engine())
+        import_to_do.import_status = ImportStatus.finished
+        session.add(import_to_do)
+        session.commit()
+        session.close()
+
+    return True
+
+
+def add_new_import(
+    filename: Union[str, None] = None,
+    bucket_name: Union[str, None] = None,
+    object_name: Union[str, None] = None,
+):
+    """
+    Adds a new import that needs to be done.
+    :param filename:
+    :param bucket_name:
+    :param object_name:
+    :return:
+    """
+    session = Session(get_engine())
+    import_to_do = ImportedDataset(
+        bucket_name=bucket_name, object_name=(filename or object_name)
+    )
+    session.add(import_to_do)
+    session.commit()
+    session.close()
 
 
 if __name__ == "__main__":
-    import_disclosure("../../files/H-2A_Disclosure_Data_FY2021.xlsx")
+    import_disclosure("../files/H-2A_Disclosure_Data_FY2021.xlsx")

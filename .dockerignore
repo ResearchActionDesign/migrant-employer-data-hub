@@ -1,4 +1,4 @@
 .aws-sam
-files
+app/files
 .ssh
 .pytest_cache
