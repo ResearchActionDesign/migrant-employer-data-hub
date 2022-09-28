@@ -90,7 +90,7 @@ jobs:
           aws ec2-instance-connect send-ssh-public-key
           --instance-id $AWS_EC2_INSTANCE_ID
           --instance-os-user ec2-user
-          --availability-zone us-east-2b
+          --availability-zone $AWS_AVAILABILITY_ZONE
           --ssh-public-key "$SSH_PUBLIC_KEY"
       - run: |
           ssh -A -o StrictHostKeyChecking=no ec2-user@$AWS_EC2_INSTANCE_URL "
