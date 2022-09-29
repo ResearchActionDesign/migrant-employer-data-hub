@@ -26,7 +26,6 @@ unidecode = "*"
 dedupe-variable-name = "*"
 prettytable = "*"
 psycopg2 = "*"
-postal = {version = "*", sys_platform=  "!= 'linux'"}
 
 [requires]
 python_version = "3.9"
