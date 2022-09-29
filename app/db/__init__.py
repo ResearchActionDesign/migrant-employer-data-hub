@@ -48,7 +48,11 @@ def get_engine(echo=False, yield_per=False, refresh=False) -> Engine:
             DB_URL,
             echo=echo,
             execution_options=({"yield_per": yield_per} if yield_per else {}),
-            connect_args=({"sslmode": "require"} if DB_ENGINE == "postgres" else {}),
+            connect_args=(
+                {"sslmode": "require"}
+                if DB_ENGINE == "postgres" and ENVIRONMENT != "local"
+                else {}
+            ),
         )
     SQLModel.metadata.create_all(get_engine.engine)
     return get_engine.engine

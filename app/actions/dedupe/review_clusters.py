@@ -2,12 +2,12 @@ import os
 from datetime import datetime
 
 from prettytable import PrettyTable
-from sqlalchemy import func, null, select, update
+from sqlalchemy import Integer, func, null, select, update
 
 from app.actions.dedupe import get_cluster_table, get_employer_record_table
 from app.db import get_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
-from app.settings import DEDUPE_CLUSTER_REVIEW_THRESHOLD
+from app.settings import DB_ENGINE, DEDUPE_CLUSTER_REVIEW_THRESHOLD
 
 
 def review_clusters(limit=10) -> None:
@@ -21,16 +21,28 @@ def review_clusters(limit=10) -> None:
     cluster_table = get_cluster_table(engine)
     employer_record_table = get_employer_record_table(engine)
 
-    cluster_table_subquery = (
-        select(
-            cluster_table.c.canon_id,
-            func.group_concat(cluster_table.c.employer_record_id, ",").label(
-                "employer_record_ids"
-            ),
+    if DB_ENGINE == "postgres":
+        cluster_table_subquery = (
+            select(
+                cluster_table.c.canon_id,
+                func.array_agg(cluster_table.c.employer_record_id.cast(Integer)).label(
+                    "employer_record_ids"
+                ),
+            )
+            .group_by(cluster_table.c.canon_id)
+            .subquery()
         )
-        .group_by(cluster_table.c.canon_id)
-        .subquery()
-    )
+    else:
+        cluster_table_subquery = (
+            select(
+                cluster_table.c.canon_id,
+                func.group_concat(
+                    cluster_table.c.employer_record_id.cast(Integer)
+                ).label("employer_record_ids"),
+            )
+            .group_by(cluster_table.c.canon_id)
+            .subquery()
+        )
 
     total_to_review = (
         conn.execute(
@@ -56,9 +68,15 @@ def review_clusters(limit=10) -> None:
         os.system("clear")
 
         # Load all employer nodes for that cluster.
+        cluster_employer_record_ids = []
+        if isinstance(cluster.employer_record_ids, str):
+            cluster_employer_record_ids = cluster.employer_record_ids.split(",")
+        else:
+            cluster_employer_record_ids = cluster.employer_record_ids
+
         employers_in_cluster = conn.execute(
             select(employer_record_table).where(
-                employer_record_table.c.id.in_(cluster.employer_record_ids.split(","))
+                employer_record_table.c.id.in_(cluster_employer_record_ids)
             )
         )
         table_printer = PrettyTable()

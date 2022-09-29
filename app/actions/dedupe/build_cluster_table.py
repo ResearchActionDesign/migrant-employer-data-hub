@@ -81,9 +81,8 @@ def build_cluster_table(refresh: bool = False) -> bool:
     with open(settings_file, "rb") as sf:
         deduper = dedupe.StaticDedupe(sf, num_cores=4)
 
-    engine = get_engine(refresh=True, yield_per=1000)
+    engine = get_engine(refresh=True)
     conn = engine.connect()
-
     # Create blocking map table
     metadata_obj = MetaData()
     blocking_map_table = Table(
@@ -94,6 +93,10 @@ def build_cluster_table(refresh: bool = False) -> bool:
     # Clear blocking map table.
     conn.execute(delete(blocking_map_table))
     conn.commit()
+    conn.close()
+
+    engine = get_engine(refresh=True, yield_per=1000)
+    conn = engine.connect()
 
     # Create inverted index
     employer_record_table = get_employer_record_table(engine)
@@ -113,6 +116,11 @@ def build_cluster_table(refresh: bool = False) -> bool:
         {"block_key": v1, "employer_record_id": v2}
         for (v1, v2) in deduper.fingerprinter(full_data)
     ]
+
+    conn.close()
+
+    engine = get_engine(refresh=True)
+    conn = engine.connect()
 
     # TODO: The example online uses a bulk CSV insert here to speed up things. Is this necessary?
     conn.execute(insert(blocking_map_table), blocking_data)
