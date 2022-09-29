@@ -101,6 +101,8 @@ class TestUpdateEmployerRecords(TestCase):
         test_employer_1 = self.session.exec(select(EmployerRecord).where(EmployerRecord.name=='Test business')).one()
         self.assertEqual(datetime.datetime(1999, 1, 1), test_employer_1.first_seen)
         self.assertEqual(datetime.datetime(2010, 1, 1), test_employer_1.last_seen)
+        self.assertEqual('test business', test_employer_1.slug)
+        self.assertEqual('test trade name', test_employer_1.trade_name_slug)
 
         # Check that employer records are properly linked back.
         self.assertEqual(test_employer_1.id, test_listing.employer_record_id)

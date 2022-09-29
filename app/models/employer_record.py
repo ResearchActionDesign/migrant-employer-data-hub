@@ -23,10 +23,12 @@ class EmployerRecord(DoLDataItem, table=True):
 
     name: str = Field(index=True)
     trade_name_dba: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    country: Optional[str]
-    phone: Optional[str]
+    city: Optional[str] = Field(index=True)
+    state: Optional[str] = Field(index=True)
+    country: Optional[str] = Field(index=True)
+    phone: Optional[str] = Field(index=True)
+    slug: Optional[str] = Field(index=True)
+    trade_name_slug: Optional[str] = Field(index=True)
 
     # Relationships to other records
     unique_employer_id: Optional[UUID4] = Field(

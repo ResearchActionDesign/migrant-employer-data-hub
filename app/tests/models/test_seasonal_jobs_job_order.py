@@ -31,7 +31,7 @@ class TestSeasonalJobsJobOrder(TestCase):
             "employer_city": "Test city",
             "employer_state": "California",
             "employer_zip": "Test zip",
-            "employer_phone": "Test phone"
+            "employer_phone": "1-919-222A"
         })
         test_listing.clean()
         self.assertEqual(test_listing.employer_name, 'Test business')
@@ -39,7 +39,7 @@ class TestSeasonalJobsJobOrder(TestCase):
         self.assertEqual(test_listing.employer_city, "Test city")
         self.assertEqual(test_listing.employer_state,"CA")
         self.assertEqual(test_listing.employer_postal_code, "Test zip")
-        self.assertEqual(test_listing.employer_phone, "Test phone")
+        self.assertEqual(test_listing.employer_phone, "1919222")
 
     def test_handles_null_fields(self):
         test_listing = SeasonalJobsJobOrder(scraped_data={

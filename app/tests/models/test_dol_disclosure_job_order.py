@@ -23,6 +23,7 @@ class TestDolDisclosureJobOrder(TestCase):
             employer_city="Test city",
             employer_state="California",
             employer_postal_code="Test zip ",
+            employer_phone='1-919-222+2222'
         )
         test_listing.clean()
         self.assertEqual(test_listing.employer_name, 'Test business')
@@ -30,8 +31,5 @@ class TestDolDisclosureJobOrder(TestCase):
         self.assertEqual(test_listing.employer_city, "Test city")
         self.assertEqual(test_listing.employer_state,"CA")
         self.assertEqual(test_listing.employer_postal_code, "Test zip")
-
-
-
-
+        self.assertEqual(test_listing.employer_phone, '19192222222')
 

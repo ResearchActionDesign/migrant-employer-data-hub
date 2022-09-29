@@ -33,7 +33,6 @@ class TestScrapeListings(TestCase):
     def capsys(self, capsys):
         self.capsys = capsys
 
-
     @pytest.fixture(autouse=True)
     def monkeypatch(self, monkeypatch):
         self.monkeypatch = monkeypatch

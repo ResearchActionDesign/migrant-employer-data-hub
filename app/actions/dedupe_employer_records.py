@@ -627,6 +627,6 @@ def generate_canonical_employers_from_clusters(batch_limit: int = 500) -> None:
 if __name__ == "__main__":
     # interactively_train_model()
     # build_cluster_table()
-    # review_clusters()
+    review_clusters()
     # generate_canonical_employers_from_non_clustered_records()
-    generate_canonical_employers_from_clusters()
+    # generate_canonical_employers_from_clusters()

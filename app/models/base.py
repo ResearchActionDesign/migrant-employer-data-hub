@@ -23,6 +23,16 @@ def clean_string_field(value: Union[str, None]) -> Union[str, None]:
     return value
 
 
+def clean_phone_field(value: Union[str, None]) -> Union[str, None]:
+    if not value:
+        return None
+
+    value = re.sub("[^0-9]", "", value)
+    if not value:
+        return None
+    return value
+
+
 class DoLDataSource(str, Enum):
     scraper = "scraper"
     dol_disclosure = "DoL annual or quarterly disclosure data"

@@ -7,7 +7,13 @@ from pydantic import AnyHttpUrl, condecimal, conint, constr
 from sqlmodel import Field, Relationship
 
 from app.constants import US_STATE_ABBREVIATIONS, US_STATES_TO_ABBREV
-from app.models.base import CaseStatus, DoLDataItem, DoLDataSource, clean_string_field
+from app.models.base import (
+    CaseStatus,
+    DoLDataItem,
+    DoLDataSource,
+    clean_phone_field,
+    clean_string_field,
+)
 from app.models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
@@ -218,5 +224,8 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
             and self.employer_state.lower() in US_STATE_ABBREVIATIONS
         ):
             self.employer_country = "UNITED STATES OF AMERICA"
+
+        self.employer_phone = clean_phone_field(self.employer_phone)
+        self.phone_to_apply = clean_phone_field(self.phone_to_apply)
 
         return self
