@@ -150,3 +150,6 @@ function.zip
 
 .ssh/*
 app/job-order-pdfs/*
+
+**/pgsql_big_dedupe_example_training.json
+**/pgsql_big_dedupe_example_settings

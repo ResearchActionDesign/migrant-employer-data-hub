@@ -1,4 +1,9 @@
-from app.actions import dedupe_employer_records
+from app.actions.dedupe import (
+    build_cluster_table,
+    generate_canonical_employers_from_clustered_records,
+    review_clusters,
+    train_dedupe_model,
+)
 
 if __name__ == "__main__":
     i = None
@@ -23,12 +28,12 @@ if __name__ == "__main__":
             print(
                 "Analyzing records to generate training set (this may take a while)..."
             )
-            dedupe_employer_records.interactively_train_model()
+            train_dedupe_model.train_dedupe_model()
             print("Finished training, building cluster table...")
-            dedupe_employer_records.build_cluster_table()
+            build_cluster_table.build_cluster_table()
 
         if i == "r":
-            dedupe_employer_records.review_clusters(10)
+            review_clusters.review_clusters(10)
 
         if i == "g":
-            dedupe_employer_records.generate_canonical_employers_from_clusters()
+            generate_canonical_employers_from_clustered_records.generate_canonical_employers_from_clusters()

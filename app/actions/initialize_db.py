@@ -18,6 +18,8 @@ from app.models.static_value import StaticValue  # noqa
 from app.models.unique_employer import UniqueEmployer  # noqa
 from app.settings import ALEMBIC_CONFIG_PATH, DB_ENGINE
 
+# flake8: noqa
+
 
 def set_up_extensions(engine: Engine):
     sql_query = """CREATE EXTENSION IF NOT EXISTS "unaccent";
@@ -35,12 +37,12 @@ def set_up_extensions(engine: Engine):
       ),
       -- replaces anything that's not a letter, number, hyphen('-'), or underscore('_') with a hyphen('-')
       "hyphenated" AS (
-        SELECT regexp_replace("value", '[^a-z0-9\\-_]+', '-', 'gi') AS "value"
+        SELECT regexp_replace("value", '[^a-z0-9\-_]+', '-', 'gi') AS "value"
         FROM "lowercase"
       ),
       -- trims hyphens('-') if they exist on the head or tail of the string
       "trimmed" AS (
-        SELECT regexp_replace(regexp_replace("value", '\\-+$', ''), '^\\-', '') AS "value"
+        SELECT regexp_replace(regexp_replace("value", '\-+$', ''), '^\-', '') AS "value"
         FROM "hyphenated"
       )
       SELECT "value" FROM "trimmed";

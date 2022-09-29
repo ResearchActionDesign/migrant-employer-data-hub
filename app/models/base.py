@@ -56,9 +56,7 @@ class DoLDataItemWithoutSourceOrId(SQLModelWithSnakeTableName):
         sa_column=sa.Column(sa.DateTime, default=datetime.utcnow)
     )
     last_seen: Optional[datetime] = Field(
-        sa_column=sa.Column(
-            sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-        )
+        sa_column=sa.Column(sa.DateTime, default=datetime.utcnow)
     )
 
 
