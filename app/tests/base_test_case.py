@@ -26,5 +26,5 @@ class BaseTestCase(TestCase):
 
     def tearDown(self):
         if self.use_session:
-            drop_all_models()
             self.session.close()
+            drop_all_models()

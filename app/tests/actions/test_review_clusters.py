@@ -59,19 +59,19 @@ class TestReviewClusters(BaseTestCase):
 
         # Assert output looks right
         output_1 =  \
-        """+---+----+-------------+-------------------+------+-------+---------+-------+
-| * | ID | Name        | Trade Name        | City | State | Country | Phone |
-+---+----+-------------+-------------------+------+-------+---------+-------+
-| * | 1  | Test name   | Test trade name   | None | None  | None    | None  |
-|   | 2  | Test name 2 | Test trade name 2 | None | None  | None    | None  |
-+---+----+-------------+-------------------+------+-------+---------+-------+"""
+        """+---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+
+| * | ID | Name        | Trade Name        | City | State | Country | Phone | First Seen | Last Seen  | Source                                  | Score |
++---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+
+| * | 1  | Test name   | Test trade name   | None | None  | None    |       | 2022-09-30 | 2022-09-30 | DoL annual or quarterly disclosure data | 0.70  |
+|   | 2  | Test name 2 | Test trade name 2 | None | None  | None    |       | 2022-09-30 | 2022-09-30 | DoL annual or quarterly disclosure data |       |
++---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+"""
         output_2 = \
-            """+---+----+-------------+-------------------+------+-------+---------+-------+
-| * | ID | Name        | Trade Name        | City | State | Country | Phone |
-+---+----+-------------+-------------------+------+-------+---------+-------+
-|   | 1  | Test name   | Test trade name   | None | None  | None    | None  |
-| * | 2  | Test name 2 | Test trade name 2 | None | None  | None    | None  |
-+---+----+-------------+-------------------+------+-------+---------+-------+"""
+            """+---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+
+| * | ID | Name        | Trade Name        | City | State | Country | Phone | First Seen | Last Seen  | Source                                  | Score |
++---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+
+|   | 1  | Test name   | Test trade name   | None | None  | None    |       | 2022-09-30 | 2022-09-30 | DoL annual or quarterly disclosure data |       |
+| * | 2  | Test name 2 | Test trade name 2 | None | None  | None    |       | 2022-09-30 | 2022-09-30 | DoL annual or quarterly disclosure data | 0.70  |
++---+----+-------------+-------------------+------+-------+---------+-------+------------+------------+-----------------------------------------+-------+"""
 
         output = self.capsys.readouterr().out
         self.assertIn(output_1, output)

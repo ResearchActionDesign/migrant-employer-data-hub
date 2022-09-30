@@ -1,5 +1,6 @@
-import os
+import re
 from datetime import datetime
+from typing import Union
 
 from prettytable import PrettyTable
 from sqlalchemy import Integer, func, null, select, update
@@ -8,6 +9,19 @@ from app.actions.dedupe import get_cluster_table, get_employer_record_table
 from app.db import get_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from app.settings import DB_ENGINE, DEDUPE_CLUSTER_REVIEW_THRESHOLD
+
+
+def format_phone_number(tel: Union[str, None]) -> str:
+    if not tel:
+        return ""
+    tel = tel.removeprefix("+")
+    tel = tel.removeprefix("1")  # remove leading +1 or 1
+    tel = re.sub("[ ()-]", "", tel)  # remove space, (), -
+
+    if len(tel) == 10:
+        tel = f"{tel[:3]}-{tel[3:6]}-{tel[6:]}"
+
+    return tel
 
 
 def review_clusters(limit=10) -> None:
@@ -65,8 +79,6 @@ def review_clusters(limit=10) -> None:
         .limit(limit)
     )
     for n, cluster in enumerate(cluster_inclusions_to_review):
-        os.system("clear")
-
         # Load all employer nodes for that cluster.
         cluster_employer_record_ids = []
         if isinstance(cluster.employer_record_ids, str):
@@ -90,6 +102,10 @@ def review_clusters(limit=10) -> None:
             "State",
             "Country",
             "Phone",
+            "First Seen",
+            "Last Seen",
+            "Source",
+            "Score",
         ]
         rows = [
             (
@@ -99,8 +115,14 @@ def review_clusters(limit=10) -> None:
                 e.trade_name_dba,
                 e.city,
                 e.state,
-                e.country,
-                e.phone,
+                "USA" if e.country == "UNITED STATES OF AMERICA" else e.country,
+                format_phone_number(e.phone),
+                e.first_seen.strftime("%Y-%m-%d"),
+                e.last_seen.strftime("%Y-%m-%d"),
+                e.source,
+                f"{cluster.cluster_score:.2f}"
+                if e.id == cluster.employer_record_id
+                else "",
             )
             for e in employers_in_cluster
         ]
