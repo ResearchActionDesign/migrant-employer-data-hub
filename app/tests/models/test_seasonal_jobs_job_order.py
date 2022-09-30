@@ -3,6 +3,8 @@ from app.tests.base_test_case import BaseTestCase
 
 
 class TestSeasonalJobsJobOrder(BaseTestCase):
+    use_session = False
+
     def test_cleans_url(self):
         test_listing = SeasonalJobsJobOrder(scraped_data={"apply_url": "N/A"})
         test_listing.clean()

@@ -1,6 +1,6 @@
 from app.actions.dedupe import (
     build_cluster_table,
-    generate_canonical_employers_from_clustered_records,
+    generate_canonical_employers_from_clusters,
     review_clusters,
     train_dedupe_model,
 )
@@ -36,4 +36,4 @@ if __name__ == "__main__":
             review_clusters.review_clusters(10)
 
         if i == "g":
-            generate_canonical_employers_from_clustered_records.generate_canonical_employers_from_clusters()
+            generate_canonical_employers_from_clusters.generate_canonical_employers_from_clusters()

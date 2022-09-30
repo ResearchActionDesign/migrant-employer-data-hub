@@ -1,19 +1,51 @@
 import hashlib
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from sqlmodel import Field, Relationship
+from sqlalchemy import exc, text
+from sqlmodel import Field, Relationship, Session
 
 from app.constants import US_STATE_ABBREVIATIONS, US_STATES_TO_ABBREV
 from app.models.base import SQLModelWithSnakeTableName, clean_string_field
 from app.models.dol_disclosure_job_order_address_record_link import (
     DolDisclosureJobOrderAddressRecordLink,
 )
+from app.settings import DB_ENGINE
 
 # Technique to avoid circular imports, see https://sqlmodel.tiangolo.com/tutorial/code-structure/
 if TYPE_CHECKING:
     from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
     from app.models.employer_record_address_link import EmployerRecordAddressLink
+
+
+def title_case_or_none(obj: Union[str, None]) -> Union[str, object]:
+    if obj is not None:
+        return str(obj).title()
+    return None
+
+
+def normalize_address(
+    address_str: Union[str, None], session: Union[Session, None] = None
+) -> str:
+    if not address_str:
+        return None
+
+    if DB_ENGINE == "postgres" and session:
+        try:
+            result = session.exec(
+                text(
+                    f"select coalesce("
+                    f"nullif("
+                    f"pprint_addy("
+                    f"pagc_normalize_address('{address_str}')), ''), '{address_str}') "
+                    f"as address"
+                )
+            )
+            return result.first()[0]
+        except exc.DBAPIError as e:
+            print(e)
+
+    return title_case_or_none(address_str)
 
 
 class AddressRecord(SQLModelWithSnakeTableName, table=True):
@@ -57,15 +89,12 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
     lon: Optional[float]
 
     def __str__(self) -> str:
-        values_dict = [
-            self.address_1,
-            self.address_2,
-            self.city + "," if self.city else None,
-            self.state,
-            self.postal_code,
-            self.country,
-        ]
-        return " ".join([v for v in values_dict if v]).strip()
+        address_part = " ".join([v for v in (self.address_1, self.address_2) if v])
+        city_state = ", ".join([v for v in (self.city, self.state) if v])
+        address_city_state = ", ".join([v for v in (address_part, city_state) if v])
+        return " ".join(
+            [v for v in (address_city_state, self.postal_code, self.country) if v]
+        )
 
     def is_null(self) -> bool:
         return str(self).strip() == ""
@@ -97,5 +126,7 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
             and self.state.lower() in US_STATE_ABBREVIATIONS
         ):
             self.country = "UNITED STATES OF AMERICA"
+
+        self.normalized_address = normalize_address(str(self))
 
         return self

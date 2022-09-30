@@ -23,13 +23,18 @@ def clean_string_field(value: Union[str, None]) -> Union[str, None]:
     return value
 
 
-def clean_phone_field(value: Union[str, None]) -> Union[str, None]:
+def clean_phone_field(
+    value: Union[str, None], country: Union[str, None]
+) -> Union[str, None]:
     if not value:
         return None
 
     value = re.sub("[^0-9]", "", value)
     if not value:
         return None
+
+    if len(value) == 10 and (country is None or country == "UNITED STATES OF AMERICA"):
+        return f"1{value}"
     return value
 
 

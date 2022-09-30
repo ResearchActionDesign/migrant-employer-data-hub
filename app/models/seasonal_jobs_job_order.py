@@ -87,6 +87,8 @@ class SeasonalJobsJobOrder(DoLDataItem, table=True):
                 str(self.employer_state).lower()
             ].upper()
 
-        self.employer_phone = clean_phone_field(self.employer_phone)
+        self.employer_phone = clean_phone_field(
+            self.employer_phone, self.employer_country
+        )
 
         return self

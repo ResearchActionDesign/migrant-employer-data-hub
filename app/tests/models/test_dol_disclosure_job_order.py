@@ -3,6 +3,8 @@ from app.tests.base_test_case import BaseTestCase
 
 
 class TestDolDisclosureJobOrder(BaseTestCase):
+    use_session = False
+
     def test_cleans_trade_name(self):
         test_listing = DolDisclosureJobOrder(trade_name_dba='DBA test business ')
         test_listing.clean()
@@ -25,3 +27,13 @@ class TestDolDisclosureJobOrder(BaseTestCase):
         self.assertEqual(test_listing.employer_postal_code, "Test zip")
         self.assertEqual(test_listing.employer_phone, '19192222222')
 
+        test_listing = DolDisclosureJobOrder(
+            employer_name=" Test business ",
+            trade_name_dba="Test trade name",
+            employer_city="Test city",
+            employer_state="California",
+            employer_postal_code="Test zip ",
+            employer_phone='919-222+2222'
+        )
+        test_listing.clean()
+        self.assertEqual(test_listing.employer_phone, '19192222222')

@@ -225,7 +225,11 @@ class DolDisclosureJobOrder(DoLDataItem, table=True):
         ):
             self.employer_country = "UNITED STATES OF AMERICA"
 
-        self.employer_phone = clean_phone_field(self.employer_phone)
-        self.phone_to_apply = clean_phone_field(self.phone_to_apply)
+        self.employer_phone = clean_phone_field(
+            self.employer_phone, self.employer_country
+        )
+        self.phone_to_apply = clean_phone_field(
+            self.phone_to_apply, self.employer_country
+        )
 
         return self

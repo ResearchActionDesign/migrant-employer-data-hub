@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from sqlalchemy import null
 from sqlmodel import Session, select
 
 from app.db import get_engine
-from app.models.address_record import AddressRecord
+from app.models.address_record import AddressRecord, normalize_address
 from app.models.base import DoLDataSource
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
 from app.models.dol_disclosure_job_order_address_record_link import (
@@ -17,12 +17,6 @@ from app.models.employer_record_address_link import (
     EmployerRecordAddressLink,
 )
 from app.settings import ROWS_BEFORE_COMMIT
-
-
-def title_case_or_none(obj: Union[str, None]) -> Union[str, object]:
-    if obj is not None:
-        return str(obj).title()
-    return null()
 
 
 def link_address_to_employer(
@@ -88,9 +82,9 @@ def link_address_to_employer(
 
 
 def check_for_matching_addresses(
-    search_address: AddressRecord,
+    address: AddressRecord,
     session: Session,
-    local_addresses: Union[List[AddressRecord], None] = None,
+    local_addresses: Union[Dict[str, AddressRecord], None] = None,
 ) -> List[AddressRecord]:
     """
     Checks the DB for addresses matching a given address.
@@ -101,23 +95,17 @@ def check_for_matching_addresses(
     """
 
     if local_addresses is None:
-        local_addresses = []
+        local_addresses = {}
     if len(local_addresses) > 0:
         # First, search through local addresses.
-        string_match = str(search_address)
-        matching_local_addresses = [
-            a for a in local_addresses if str(a) == string_match
-        ]
-        if len(matching_local_addresses) > 0:
-            return matching_local_addresses
+        matching_local_addresses = local_addresses.get(address.normalized_address)
+        if matching_local_addresses:
+            return [
+                matching_local_addresses,
+            ]
 
     statement = select(AddressRecord).where(
-        AddressRecord.address_1 == search_address.address_1,
-        AddressRecord.address_2 == search_address.address_2,
-        AddressRecord.city == search_address.city,
-        AddressRecord.state == search_address.state,
-        AddressRecord.postal_code == search_address.postal_code,
-        AddressRecord.country == search_address.country,
+        AddressRecord.normalized_address == address.normalized_address
     )
     return session.exec(statement).all()
 
@@ -125,7 +113,7 @@ def check_for_matching_addresses(
 def process_job_order(
     job_order: DolDisclosureJobOrder,
     session: Session,
-    local_addresses: Union[List[AddressRecord], None] = None,
+    local_addresses: Union[Dict[str, AddressRecord], None] = None,
 ) -> Tuple[DolDisclosureJobOrder, List[AddressRecord]]:
     """
     Process addresses from a single job order.
@@ -136,11 +124,11 @@ def process_job_order(
     """
     # First, check for matching office addresses.
 
-    # TODO: Compute/store normalized address, match by normalizd address.
+    # TODO: Compute/store normalized address, match by normalized address.
     # TODO: local_addresses as dict of normalized address -> object.
 
     if local_addresses is None:
-        local_addresses = []
+        local_addresses = {}
     office_address = AddressRecord(
         address_1=job_order.employer_address_1,
         address_2=job_order.employer_address_2,
@@ -149,6 +137,7 @@ def process_job_order(
         postal_code=job_order.employer_postal_code,
         country=job_order.employer_country,
     ).clean()
+    office_address.normalized_address = normalize_address(office_address)
 
     if not office_address.is_null():
         matching_addresses = check_for_matching_addresses(
@@ -160,7 +149,7 @@ def process_job_order(
                 office_address,
             ]
             session.add(office_address)
-            local_addresses.append(office_address)
+            local_addresses[office_address.normalized_address] = office_address
 
         for address in matching_addresses:
             link_address_to_employer(
@@ -185,6 +174,7 @@ def process_job_order(
 
     if jobsite_address.is_null():
         return (job_order, local_addresses)
+    jobsite_address.normalized_address = normalize_address(jobsite_address)
 
     matching_addresses = check_for_matching_addresses(
         jobsite_address, session, local_addresses=local_addresses
@@ -195,7 +185,7 @@ def process_job_order(
             jobsite_address,
         ]
         session.add(jobsite_address)
-        local_addresses.append(jobsite_address)
+        local_addresses[jobsite_address.normalized_address] = jobsite_address
 
     for address in matching_addresses:
         link_address_to_employer(
@@ -234,7 +224,7 @@ def update_addresses(max_records: int = -1) -> None:
 
     job_orders_to_process = session.exec(statement)
 
-    local_addresses: List[AddressRecord] = []
+    local_addresses: Dict[str, AddressRecord] = {}
     i = 0
     for job_order in job_orders_to_process:
         job_order, local_addresses = process_job_order(
@@ -246,13 +236,9 @@ def update_addresses(max_records: int = -1) -> None:
             print(f"Processed {i} job orders for addresses")
             session.commit()
 
-            if len(local_addresses) > 2500:
-                # In-memory comparisons seem to be a bear after a certain amount of records get in this array.
-                local_addresses = []
-
     session.commit()
     session.close()
 
 
 if __name__ == "__main__":
-    update_addresses()
+    update_addresses(250)

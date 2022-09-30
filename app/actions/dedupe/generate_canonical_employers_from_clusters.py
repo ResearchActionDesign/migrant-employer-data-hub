@@ -1,4 +1,4 @@
-import dedupe
+from dedupe import canonicalize
 from sqlalchemy import false, func, or_, select, true, update
 from sqlmodel import Session
 from sqlmodel import select as sqlmodel_select
@@ -43,17 +43,18 @@ def process_single_cluster(cluster, cluster_table, engine, conn) -> None:
         if e.source not in sources:
             sources.append(e.source)
 
-    canonical_record = dedupe.canonicalize(employer_records_dicts)
+    canonical_record = canonicalize(employer_records_dicts)
 
     # If for some reason we should have an existing unique employer matching this, check first!
     canonical_employer = session.exec(
         sqlmodel_select(UniqueEmployer).where(
             UniqueEmployer.name == canonical_record["name"],
-            UniqueEmployer.trade_name_dba == canonical_record["trade_name_dba"],
-            UniqueEmployer.city == canonical_record["city"],
-            UniqueEmployer.state == canonical_record["state"],
-            UniqueEmployer.country == canonical_record["country"],
-            UniqueEmployer.phone == canonical_record["phone"],
+            UniqueEmployer.trade_name_dba
+            == canonical_record.get("trade_name_dba", None),
+            UniqueEmployer.city == canonical_record.get("city", None),
+            UniqueEmployer.state == canonical_record.get("state", None),
+            UniqueEmployer.country == canonical_record.get("country", None),
+            UniqueEmployer.phone == canonical_record.get("phone", None),
         )
     ).all()
     if len(canonical_employer) == 1:

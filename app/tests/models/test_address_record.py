@@ -1,8 +1,12 @@
 from app.models.address_record import AddressRecord
+from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
+from app.models.employer_record_address_link import EmployerRecordAddressLink  # noqa
 from app.tests.base_test_case import BaseTestCase
 
 
 class TestAddressRecord(BaseTestCase):
+    use_session = False
+
     def test_to_string(self):
         test_address = AddressRecord(
             address_1='Address line 1',
@@ -12,7 +16,7 @@ class TestAddressRecord(BaseTestCase):
             postal_code='27701',
             country='USA'
         )
-        self.assertEqual(str(test_address), "Address line 1 Address line 2 City, NC 27701 USA")
+        self.assertEqual("Address line 1 Address line 2, City, NC 27701 USA", str(test_address))
         test_address = AddressRecord(
             address_1='Address line 1',
             address_2='Address line 2',
@@ -21,7 +25,16 @@ class TestAddressRecord(BaseTestCase):
             postal_code=None,
             country='USA'
         )
-        self.assertEqual(str(test_address), "Address line 1 Address line 2 USA")
+        self.assertEqual("Address line 1 Address line 2 USA", str(test_address))
+        test_address = AddressRecord(
+            address_1='Address line 1',
+            address_2=None,
+            city='Boulder',
+            state='CO',
+            postal_code='12345',
+            country='USA'
+        )
+        self.assertEqual("Address line 1, Boulder, CO 12345 USA", str(test_address))
 
     def test_geocode_hash(self):
         test_address = AddressRecord(

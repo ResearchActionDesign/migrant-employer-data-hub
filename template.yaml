@@ -118,6 +118,50 @@ Resources:
       DockerBuildArgs:
         HANDLER_PACKAGE: 'update_employer_records'
 
+  UpdateAddressesFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'update_addresses'
+
+  GenerateCanonicalEmployersFromClusteredRecordsFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Architectures:
+        - arm64
+      PackageType: Image
+      Role: !GetAtt CDMDataHubLambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-sg-id}}'
+        SubnetIds:
+          - '{{resolve:ssm:cdm-data-hub-vpc-subnet-id}}'
+      Environment:
+        Variables:
+          ENVIRONMENT: 'lambda'
+          DB_ENGINE: 'postgres'
+    Metadata:
+      Dockerfile: lambda.Dockerfile
+      DockerContext: ./
+      DockerBuildArgs:
+        HANDLER_PACKAGE: 'generate_canonical_employers_from_clustered_records'
+
   H2ADisclosureDatasetsBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -169,6 +213,24 @@ Resources:
         - Arn: !GetAtt 'UpdateEmployerRecordsFunction.Arn'
           Id: 'UpdateEmployerRecordsFunction'
 
+  UpdateAddressesRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(30 minutes)" # TODO: Decrease this to 1-2x daily
+      Targets:
+        - Arn: !GetAtt 'UpdateAddressesFunction.Arn'
+          Id: 'UpdateAddressesFunction'
+
+  GenerateCanonicalEmployersFromClusteredRecordsRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      State: ENABLED
+      ScheduleExpression: "rate(30 minutes)" # TODO: Decrease this to 1-2x daily
+      Targets:
+        - Arn: !GetAtt 'GenerateCanonicalEmployersFromClusteredRecordsFunction.Arn'
+          Id: 'GenerateCanonicalEmployersFromClusteredRecordsFunction'
+
   ImportDisclosureLambdaExecutionpermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -200,6 +262,22 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'UpdateEmployerRecordsRule.Arn'
+
+  UpdateAddressesLambdaExecutionPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "UpdateAddressesFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'UpdateAddressesRule.Arn'
+
+  GenerateCanonicalEmployersFromClusteredRecordsLambdaExecutionPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt "GenerateCanonicalEmployersFromClusteredRecordsFunction.Arn"
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'GenerateCanonicalEmployersFromClusteredRecordsRule.Arn'
 
   S3LambdaExecutionpermission:
     Type: 'AWS::Lambda::Permission'
