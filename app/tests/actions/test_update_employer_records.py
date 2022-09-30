@@ -9,25 +9,13 @@ from app.db import drop_all_models, get_mock_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
 from app.models.employer_record import EmployerRecord
 from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestUpdateEmployerRecords(TestCase):
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
-
+class TestUpdateEmployerRecords(BaseTestCase):
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
         self.monkeypatch.setattr(update_employer_records, 'get_engine', get_mock_engine)
-
-    def tearDown(self):
-        drop_all_models()
-        self.session.close()
 
     def test_generates_employer_records(self):
         test_listing = DolDisclosureJobOrder(

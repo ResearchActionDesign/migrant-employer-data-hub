@@ -1,16 +1,8 @@
-from unittest import TestCase
-
-from sqlmodel import Session
-
-from app.db import get_mock_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestDolDisclosureJobOrder(TestCase):
-    def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
-
+class TestDolDisclosureJobOrder(BaseTestCase):
     def test_cleans_trade_name(self):
         test_listing = DolDisclosureJobOrder(trade_name_dba='DBA test business ')
         test_listing.clean()

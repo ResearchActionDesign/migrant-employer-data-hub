@@ -1,7 +1,5 @@
 import datetime
-from unittest import TestCase
 
-import pytest
 from sqlmodel import Session, select
 
 from app.actions import update_addresses, update_employer_records
@@ -11,25 +9,14 @@ from app.models.base import DoLDataSource
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
 from app.models.employer_record import EmployerRecord
 from app.models.employer_record_address_link import AddressType
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestUpdateAddresses(TestCase):
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
-
+class TestUpdateAddresses(BaseTestCase):
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
         self.monkeypatch.setattr(update_employer_records, 'get_engine', get_mock_engine)
         self.monkeypatch.setattr(update_addresses, 'get_engine', get_mock_engine)
-
-    def tearDown(self):
-        drop_all_models()
 
     def test_generate_address_records(self):
         test_listing = DolDisclosureJobOrder(

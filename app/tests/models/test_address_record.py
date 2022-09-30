@@ -1,16 +1,8 @@
-from unittest import TestCase
-
-from sqlmodel import Session
-
-from app.db import get_mock_engine
 from app.models.address_record import AddressRecord
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestAddressRecord(TestCase):
-    def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
-
+class TestAddressRecord(BaseTestCase):
     def test_to_string(self):
         test_address = AddressRecord(
             address_1='Address line 1',

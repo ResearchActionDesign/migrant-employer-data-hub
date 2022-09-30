@@ -1,35 +1,18 @@
-from typing import Union
-from unittest import TestCase
 from unittest.mock import MagicMock
 
-import pytest
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.actions import import_disclosure
-from app.db import drop_all_models, get_mock_engine
+from app.db import get_mock_engine
 from app.lambda_handlers import add_new_import
 from app.models.imported_dataset import ImportedDataset, ImportStatus
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestAddNewImport(TestCase):
-    session: Union[Session, None] = None
-
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
-
+class TestAddNewImport(BaseTestCase):
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
         self.monkeypatch.setattr(import_disclosure, 'get_engine', get_mock_engine)
-
-    def tearDown(self):
-        drop_all_models()
-        self.session.close()
 
     def test_add_new_import_lambda_handler(self):
        mock_add_new_import = MagicMock()

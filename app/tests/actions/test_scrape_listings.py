@@ -1,9 +1,6 @@
 from datetime import datetime
-from typing import Union
-from unittest import TestCase
 from unittest.mock import MagicMock
 
-import pytest
 import requests
 from sqlmodel import Session, select
 
@@ -11,6 +8,7 @@ from app.actions import scrape_listings
 from app.db import drop_all_models, get_mock_engine
 from app.models.dol_disclosure_job_order import DoLDataSource
 from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+from app.tests.base_test_case import BaseTestCase
 
 
 class FakeResponse(object):
@@ -26,20 +24,10 @@ class FakeResponse(object):
         raise ValueError
 
 
-class TestScrapeListings(TestCase):
-    session: Union[Session, None] = None
-
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
+class TestScrapeListings(BaseTestCase):
 
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
 
         # currently just creates 1 listing
         for i in range(1, 2):
@@ -53,10 +41,6 @@ class TestScrapeListings(TestCase):
             ))
         self.session.commit()
         self.monkeypatch.setattr(scrape_listings, 'get_engine', get_mock_engine)
-
-    def tearDown(self):
-        drop_all_models()
-        self.session.close()
 
     def test_fails_on_invalid_status_code(self):
         mock_request_post = MagicMock()

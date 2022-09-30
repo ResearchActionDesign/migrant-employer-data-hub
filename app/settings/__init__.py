@@ -14,6 +14,7 @@ JOBS_API_URL = "https://api.seasonaljobs.dol.gov/datahub/search?api-version=2020
 JOB_ORDER_BASE_URL = "https://api.seasonaljobs.dol.gov/job-order/"
 JOBS_API_KEY = os.getenv("JOBS_API_KEY", "test")
 JOB_ORDER_PDF_DESTINATION = os.getenv("JOB_ORDER_PDF_DESTINATION", "local")
+DEDUPE_CONFIG_BUCKET = os.getenv("DEDUPE_CONFIG_BUCKET", "local")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROLLBAR_KEY = os.getenv("ROLLBAR_KEY", "missing_api_key")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
@@ -33,9 +34,12 @@ if token != "missing_api_key":
     ROLLBAR_ENABLED = True
 
 # Model parameters
-TRAINING_SAMPLE_SIZE = 2500
+TRAINING_SAMPLE_SIZE = int(
+    os.getenv("TRAINING_SAMPLE_SIZE", "10000")
+)  # Number of records to pull from DB for training.
 TRAINING_RECALL_PERCENT = 0.9
 DEDUPE_CLUSTERING_THRESHOLD = 0.6
 DEDUPE_CLUSTER_REVIEW_THRESHOLD = (
     0.8  # Anything below this threshold or at it gets reviewed.
 )
+DEDUPE_CONFIG_FILE_PREFIX = os.getenv("DEDUPE_CONFIG_FILE_PREFIX", "")

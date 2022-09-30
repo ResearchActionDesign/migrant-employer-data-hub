@@ -1,16 +1,8 @@
-from unittest import TestCase
-
-from sqlmodel import Session
-
-from app.db import get_mock_engine
 from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestSeasonalJobsJobOrder(TestCase):
-    def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
-
+class TestSeasonalJobsJobOrder(BaseTestCase):
     def test_cleans_url(self):
         test_listing = SeasonalJobsJobOrder(scraped_data={"apply_url": "N/A"})
         test_listing.clean()

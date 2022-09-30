@@ -1,8 +1,5 @@
-from typing import Union
-from unittest import TestCase
 from unittest.mock import patch
 
-import pytest
 from sqlmodel import Session, select
 
 from app.actions.dedupe import review_clusters
@@ -10,28 +7,15 @@ from app.db import drop_all_models, get_mock_engine
 from app.models.base import DoLDataSource
 from app.models.dedupe_entity_map import DedupeEntityMap
 from app.models.employer_record import EmployerRecord
+from app.tests.base_test_case import BaseTestCase
 
 # flake8: noqa
 
-class TestReviewClusters(TestCase):
-    session: Union[Session, None] = None
 
-    @pytest.fixture(autouse=True)
-    def capsys(self, capsys):
-        self.capsys = capsys
-
+class TestReviewClusters(BaseTestCase):
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
         self.monkeypatch.setattr(review_clusters, 'get_engine', get_mock_engine)
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
-
-    def tearDown(self):
-        drop_all_models()
-        self.session.close()
 
     @patch('builtins.input', lambda *args: 'y')
     def test_review_clusters(self):

@@ -7,17 +7,13 @@ from app.actions import reclean_raw_listings
 from app.db import drop_all_models, get_mock_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder
 from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
+from app.tests.base_test_case import BaseTestCase
 
 
-class TestRecleanRawListings(TestCase):
+class TestRecleanRawListings(BaseTestCase):
     def setUp(self):
-        engine = get_mock_engine()
-        self.session = Session(engine)
+        super().setUp()
         self.monkeypatch.setattr(reclean_raw_listings, 'get_engine', get_mock_engine)
-
-    @pytest.fixture(autouse=True)
-    def monkeypatch(self, monkeypatch):
-        self.monkeypatch = monkeypatch
 
     def test_recleans_fields(self):
         test_listing = DolDisclosureJobOrder(
@@ -58,7 +54,3 @@ class TestRecleanRawListings(TestCase):
         self.assertEqual(test_listing_2.employer_state, "CA")
         self.assertEqual(test_listing_2.employer_postal_code, "Test zip")
         self.assertEqual(test_listing_2.employer_phone, "1919222")
-
-    def tearDown(self):
-        drop_all_models()
-        self.session.close()

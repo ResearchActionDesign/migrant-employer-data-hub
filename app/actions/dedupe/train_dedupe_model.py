@@ -1,10 +1,9 @@
-import os
 import time
 
 import dedupe
 from sqlalchemy import text
 
-from app.actions.dedupe import settings_file, training_file
+from app.actions.dedupe import get_file, settings_file, training_file
 from app.db import get_engine
 from app.models.dol_disclosure_job_order import DolDisclosureJobOrder  # noqa
 from app.settings import TRAINING_RECALL_PERCENT, TRAINING_SAMPLE_SIZE
@@ -32,7 +31,7 @@ def train_dedupe_model() -> None:
             f"""
     select id, name, trade_name_dba, city, state, country, phone
     from employer_record order by name
-    limit {4*TRAINING_SAMPLE_SIZE}"""  # TODO: Remove this limit?
+    limit {TRAINING_SAMPLE_SIZE}"""  # TODO: Remove this limit?
         )
     )
     print(f"Select query: {time.time() - t}")
@@ -46,12 +45,9 @@ def train_dedupe_model() -> None:
     print(f"Generate dict: {time.time() - t}")
     t = time.time()
 
-    if os.path.exists(training_file):
-        print("reading labeled examples from ", training_file)
-        with open(training_file, "rt") as tf:
-            deduper.prepare_training(data_set, tf, sample_size=TRAINING_SAMPLE_SIZE)
-    else:
-        deduper.prepare_training(data_set, sample_size=TRAINING_SAMPLE_SIZE)
+    # if os.path.exists(training_file):
+    with get_file(training_file) as tf:
+        deduper.prepare_training(data_set, tf)
 
     del employers
     print(f"Prepare training: {time.time() - t}")
@@ -59,11 +55,11 @@ def train_dedupe_model() -> None:
 
     dedupe.console_label(deduper)
 
-    with open(training_file, "wt") as tf:
+    with get_file(training_file, "wt") as tf:
         deduper.write_training(tf)
 
     deduper.train(recall=TRAINING_RECALL_PERCENT)
-    with open(settings_file, "wb") as sf:
+    with get_file(settings_file, "wb") as sf:
         deduper.write_settings(sf)
     deduper.cleanup_training()
     conn.close()
