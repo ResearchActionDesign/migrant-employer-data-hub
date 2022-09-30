@@ -153,3 +153,4 @@ app/job-order-pdfs/*
 
 **/pgsql_big_dedupe_example_training.json
 **/pgsql_big_dedupe_example_settings
+.aws-sam/*
