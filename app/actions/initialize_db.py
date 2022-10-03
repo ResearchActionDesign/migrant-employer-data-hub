@@ -21,7 +21,7 @@ from app.settings import ALEMBIC_CONFIG_PATH, DB_ENGINE
 # flake8: noqa
 
 
-def set_up_extensions(engine: Engine):
+def set_up_extensions(engine: Engine) -> None:
     sql_query = """CREATE EXTENSION IF NOT EXISTS "unaccent";
 
     CREATE OR REPLACE FUNCTION slugify("value" TEXT)

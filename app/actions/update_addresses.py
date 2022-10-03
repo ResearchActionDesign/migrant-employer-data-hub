@@ -18,20 +18,22 @@ from app.models.employer_record_address_link import (
 )
 from app.settings import ROWS_BEFORE_COMMIT
 
+address_normalize_session = Session(get_engine())
+
 
 def link_address_to_employer(
     session: Session,
-    address: AddressRecord,
+    address_id: int,
     employer: EmployerRecord,
     address_type: AddressType,
-    first_seen: datetime,
-    last_seen: datetime,
+    first_seen: Union[datetime, None],
+    last_seen: Union[datetime, None],
     source: DoLDataSource,
 ) -> None:
     """
     Link a single address to a single employer record, or update existing link if it exists.
     :param session
-    :param address:
+    :param address_id:
     :param employer:
     :param address_type: type of address for the linkage
     :param first_seen
@@ -44,24 +46,25 @@ def link_address_to_employer(
     existing_links = session.exec(
         select(EmployerRecordAddressLink)
         .where(EmployerRecordAddressLink.employer_record == employer)
-        .where(EmployerRecordAddressLink.address_record == address)
+        .where(EmployerRecordAddressLink.address_record_id == address_id)
         .where(EmployerRecordAddressLink.address_type == address_type)
     ).all()
     if len(existing_links) > 1:
         print(
-            f"Error! Multiple address - employer record links found for {address_type} {address} <-> {employer.name}"
+            f"Error! Multiple address - employer record links found for {address_type} {address_id} <-> {employer.name}"
         )
         return
 
     save_record = False
     if len(existing_links) == 1:
-        if (
-            not existing_links[0].first_seen
-            or existing_links[0].first_seen > first_seen
+        if not existing_links[0].first_seen or (
+            first_seen and existing_links[0].first_seen > first_seen
         ):
             existing_links[0].first_seen = first_seen
             save_record = True
-        if not existing_links[0].last_seen or existing_links[0].last_seen < last_seen:
+        if not existing_links[0].last_seen or (
+            last_seen and existing_links[0].last_seen < last_seen
+        ):
             existing_links[0].last_seen = last_seen
             save_record = True
 
@@ -72,7 +75,7 @@ def link_address_to_employer(
         session.add(
             EmployerRecordAddressLink(
                 employer_record=employer,
-                address_record=address,
+                address_record_id=address_id,
                 address_type=address_type,
                 first_seen=first_seen,
                 last_seen=last_seen,
@@ -84,8 +87,8 @@ def link_address_to_employer(
 def check_for_matching_addresses(
     address: AddressRecord,
     session: Session,
-    local_addresses: Union[Dict[str, AddressRecord], None] = None,
-) -> List[AddressRecord]:
+    local_addresses: Union[Dict[str, int], None] = None,
+) -> List[int]:
     """
     Checks the DB for addresses matching a given address.
     :param address_attributes:
@@ -96,6 +99,9 @@ def check_for_matching_addresses(
 
     if local_addresses is None:
         local_addresses = {}
+    if address.normalized_address is None:
+        return []
+
     if len(local_addresses) > 0:
         # First, search through local addresses.
         matching_local_addresses = local_addresses.get(address.normalized_address)
@@ -104,7 +110,7 @@ def check_for_matching_addresses(
                 matching_local_addresses,
             ]
 
-    statement = select(AddressRecord).where(
+    statement = select(AddressRecord.id).where(
         AddressRecord.normalized_address == address.normalized_address
     )
     return session.exec(statement).all()
@@ -123,10 +129,6 @@ def process_job_order(
     :return:
     """
     # First, check for matching office addresses.
-
-    # TODO: Compute/store normalized address, match by normalized address.
-    # TODO: local_addresses as dict of normalized address -> object.
-
     if local_addresses is None:
         local_addresses = {}
     office_address = AddressRecord(
@@ -137,7 +139,9 @@ def process_job_order(
         postal_code=job_order.employer_postal_code,
         country=job_order.employer_country,
     ).clean()
-    office_address.normalized_address = normalize_address(office_address)
+    office_address.normalized_address = normalize_address(
+        str(office_address), address_normalize_session
+    )
 
     if not office_address.is_null():
         matching_addresses = check_for_matching_addresses(
@@ -145,23 +149,35 @@ def process_job_order(
         )
         if len(matching_addresses) == 0:
             # Create a new address record if none exists.
-            matching_addresses = [
-                office_address,
-            ]
             session.add(office_address)
-            local_addresses[office_address.normalized_address] = office_address
+            session.commit()
+            session.refresh(office_address)
+            local_addresses[office_address.normalized_address] = office_address.id
+            matching_addresses = [
+                office_address.id,
+            ]
 
-        for address in matching_addresses:
-            link_address_to_employer(
-                session,
-                address,
-                job_order.employer_record,
-                AddressType.office,
-                job_order.first_seen,
-                job_order.last_seen,
-                job_order.source,
+        if len(matching_addresses) > 1:
+            print(
+                f"Error -- more than one address found matching {office_address.normalized_address}"
             )
-            job_order.address_records.append(address)
+
+        link_address_to_employer(
+            session,
+            matching_addresses[0],
+            job_order.employer_record,
+            AddressType.office,
+            job_order.first_seen,
+            job_order.last_seen,
+            job_order.source,
+        )
+        session.add(
+            DolDisclosureJobOrderAddressRecordLink(
+                dol_disclosure_job_order_id=job_order.id,
+                address_record_id=matching_addresses[0],
+            )
+        )
+        office_address_id = matching_addresses[0]
 
     # Then do the same for matching jobsite addresses.
     # First create a new address and check if it is null and/or if it is the same as the previously created address.
@@ -174,30 +190,47 @@ def process_job_order(
 
     if jobsite_address.is_null():
         return (job_order, local_addresses)
-    jobsite_address.normalized_address = normalize_address(jobsite_address)
+    jobsite_address.normalized_address = normalize_address(
+        str(jobsite_address), address_normalize_session
+    )
 
     matching_addresses = check_for_matching_addresses(
         jobsite_address, session, local_addresses=local_addresses
     )
     if len(matching_addresses) == 0:
         # Create a new address record if none exists.
-        matching_addresses = [
-            jobsite_address,
-        ]
         session.add(jobsite_address)
-        local_addresses[jobsite_address.normalized_address] = jobsite_address
+        session.commit()
+        session.refresh(jobsite_address)
+        local_addresses[jobsite_address.normalized_address] = jobsite_address.id
+        matching_addresses = [
+            jobsite_address.id,
+        ]
 
-    for address in matching_addresses:
-        link_address_to_employer(
-            session,
-            address,
-            job_order.employer_record,
-            AddressType.jobsite,
-            job_order.first_seen,
-            job_order.last_seen,
-            job_order.source,
+    if len(matching_addresses) > 1:
+        print(
+            f"Error -- more than one address found matching {jobsite_address.normalized_address}"
         )
-        job_order.address_records.append(address)
+
+    link_address_to_employer(
+        session,
+        matching_addresses[0],
+        job_order.employer_record,
+        AddressType.jobsite,
+        job_order.first_seen,
+        job_order.last_seen,
+        job_order.source,
+    )
+    if matching_addresses[0] != office_address_id:
+        session.add(
+            DolDisclosureJobOrderAddressRecordLink(
+                dol_disclosure_job_order_id=job_order.id,
+                address_record_id=matching_addresses[0],
+            )
+        )
+
+    session.commit()
+
     return (job_order, local_addresses)
 
 
@@ -209,14 +242,13 @@ def update_addresses(max_records: int = -1) -> None:
     """
 
     engine = get_engine()
-    session = Session(engine)
+    session = Session(engine, autoflush=False)
 
     # Get DoL disclosure table records which have not been linked to addresses yet.
     statement = (
         select(DolDisclosureJobOrder)
         .join(DolDisclosureJobOrderAddressRecordLink, isouter=True)
         .where(DolDisclosureJobOrderAddressRecordLink.address_record_id == null())
-        .where(DolDisclosureJobOrder.employer_record != null())
     )
 
     if max_records > 0:
@@ -224,13 +256,12 @@ def update_addresses(max_records: int = -1) -> None:
 
     job_orders_to_process = session.exec(statement)
 
-    local_addresses: Dict[str, AddressRecord] = {}
+    local_addresses: Dict[str, int] = {}
     i = 0
     for job_order in job_orders_to_process:
         job_order, local_addresses = process_job_order(
             job_order, session, local_addresses=local_addresses
         )
-        session.add(job_order)
         i += 1
         if i % ROWS_BEFORE_COMMIT == 0:
             print(f"Processed {i} job orders for addresses")
@@ -241,4 +272,4 @@ def update_addresses(max_records: int = -1) -> None:
 
 
 if __name__ == "__main__":
-    update_addresses(250)
+    update_addresses(10)

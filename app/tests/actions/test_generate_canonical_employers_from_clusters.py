@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 from sqlmodel import select
 
 from app.actions.dedupe import generate_canonical_employers_from_clusters
@@ -16,13 +14,36 @@ class TestGenerateCanonicalEmployersFromClusters(BaseTestCase):
         super().setUp()
         self.monkeypatch.setattr(generate_canonical_employers_from_clusters, 'get_engine', get_mock_engine)
 
-    def test_generate_canonical_employers_from_clusters(self):
-        mock_canonicalize = MagicMock(return_value={
-            'name': 'Test name',
-            'trade_name_dba': 'Test trade name 2',
-        })
-        self.monkeypatch.setattr(generate_canonical_employers_from_clusters, 'canonicalize', mock_canonicalize)
+    def test_canonicalize(self):
+        a = {
+            'key1': 'Value1',
+            'key2': 'Value2',
+            'key3': None,
+        }
 
+        b = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3',
+        }
+
+        c = {
+            'key1': 'VALUE1',
+            'key2': 'VALUE2',
+        }
+
+        # For 2 records it should always prefer the first record.
+        canonical_1 = generate_canonical_employers_from_clusters.canonicalize([a, b])
+        self.assertEqual('Value1', canonical_1['key1'])
+        self.assertEqual('Value2', canonical_1['key2'])
+        self.assertEqual('value3', canonical_1['key3'])
+
+        # For these 3 records, record a should be the canonical one.
+        canonical_2 = generate_canonical_employers_from_clusters.canonicalize([a, b, c])
+        self.assertEqual('Value1', canonical_2['key1'])
+        self.assertEqual('Value2', canonical_2['key2'])
+
+    def test_generate_canonical_employers_from_clusters(self):
         employer_records = [EmployerRecord(
             name='Test name',
             trade_name_dba='Test trade name',
@@ -77,7 +98,7 @@ class TestGenerateCanonicalEmployersFromClusters(BaseTestCase):
         employer = self.session.exec(select(UniqueEmployer)).one_or_none()
         self.assertIsNotNone(employer)
         self.assertEqual('Test name', employer.name)
-        self.assertEqual('Test trade name 2', employer.trade_name_dba)
+        self.assertEqual('Test trade name', employer.trade_name_dba)
 
         # Clusters are marked as processed
         for c in clusters:

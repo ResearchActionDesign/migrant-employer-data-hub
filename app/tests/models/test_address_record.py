@@ -28,13 +28,13 @@ class TestAddressRecord(BaseTestCase):
         self.assertEqual("Address line 1 Address line 2 USA", str(test_address))
         test_address = AddressRecord(
             address_1='Address line 1',
-            address_2=None,
+            address_2='Address line 2',
             city='Boulder',
             state='CO',
             postal_code='12345',
             country='USA'
         )
-        self.assertEqual("Address line 1, Boulder, CO 12345 USA", str(test_address))
+        self.assertEqual("Address line 1 Address line 2, Boulder, CO 12345 USA", str(test_address))
 
     def test_geocode_hash(self):
         test_address = AddressRecord(

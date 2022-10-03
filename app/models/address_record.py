@@ -2,6 +2,7 @@ import hashlib
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union
 
+import rollbar
 from sqlalchemy import exc, text
 from sqlmodel import Field, Relationship, Session
 
@@ -28,21 +29,23 @@ def normalize_address(
     address_str: Union[str, None], session: Union[Session, None] = None
 ) -> str:
     if not address_str:
-        return None
+        return ""
 
-    if DB_ENGINE == "postgres" and session:
+    if session and DB_ENGINE == "postgres":
         try:
-            result = session.exec(
-                text(
-                    f"select coalesce("
-                    f"nullif("
-                    f"pprint_addy("
-                    f"pagc_normalize_address('{address_str}')), ''), '{address_str}') "
-                    f"as address"
+            with session.begin_nested():
+                result = session.exec(
+                    text(
+                        "select coalesce("
+                        "nullif("
+                        "pprint_addy("
+                        "pagc_normalize_address(cast(:address1 as varchar))), ''), :address2) "
+                        "as address"
+                    ).bindparams(address1=address_str, address2=address_str)
                 )
-            )
-            return result.first()[0]
+                return result.first()[0]
         except exc.DBAPIError as e:
+            rollbar.report_exc_info(e)
             print(e)
 
     return title_case_or_none(address_str)

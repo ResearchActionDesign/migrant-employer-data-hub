@@ -1,3 +1,4 @@
+import datetime
 from unittest.mock import patch
 
 from sqlmodel import Session, select
@@ -23,12 +24,16 @@ class TestReviewClusters(BaseTestCase):
         e1 = EmployerRecord(
             name='Test name',
             trade_name_dba='Test trade name',
-            source=DoLDataSource.dol_disclosure
+            source=DoLDataSource.dol_disclosure,
+            first_seen=datetime.datetime(2022,9,30),
+            last_seen = datetime.datetime(2022, 9, 30),
         )
         e2 = EmployerRecord(
             name = 'Test name 2',
             trade_name_dba='Test trade name 2',
-            source=DoLDataSource.dol_disclosure
+            source=DoLDataSource.dol_disclosure,
+            first_seen=datetime.datetime(2022, 9, 30),
+            last_seen=datetime.datetime(2022, 9, 30),
         )
         self.session.add(e1)
         self.session.add(e2)

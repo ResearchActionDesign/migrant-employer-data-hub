@@ -28,11 +28,11 @@ def train_dedupe_model() -> None:
     # Load results.
     employers = conn.execute(
         text(
-            f"""
+            """
     select id, name, trade_name_dba, city, state, country, phone
     from employer_record order by name
-    limit {TRAINING_SAMPLE_SIZE}"""  # TODO: Remove this limit?
-        )
+    limit :limit_size"""  # TODO: Remove this limit?
+        ).bindparams(limit_size=TRAINING_SAMPLE_SIZE)
     )
     print(f"Select query: {time.time() - t}")
     t = time.time()

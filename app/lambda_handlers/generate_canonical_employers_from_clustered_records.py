@@ -7,7 +7,9 @@ if ROLLBAR_ENABLED:
 
 def lambda_handler(event, context=None):
     try:
-        generate_canonical_employers_from_clusters.generate_canonical_employers_from_clusters()
+        generate_canonical_employers_from_clusters.generate_canonical_employers_from_clusters(
+            100
+        )
 
         if ROLLBAR_ENABLED:
             return rollbar.wait(lambda: True)

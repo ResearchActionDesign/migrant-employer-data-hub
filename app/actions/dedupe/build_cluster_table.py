@@ -25,8 +25,8 @@ from app.settings import DEDUPE_CLUSTERING_THRESHOLD
 
 
 def employer_record_pairs(
-    result_set: Iterable,
-) -> Generator[Tuple[Tuple[int, dict], Tuple[int, dict]], None, None]:
+    result_set: Iterable[object],
+) -> Generator[Tuple[Tuple[int, dict], Tuple[int, dict[str, str]]], None, None]:
     for _, row in enumerate(result_set):
         employer_a = (
             row.left_id,

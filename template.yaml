@@ -23,6 +23,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -45,6 +46,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -67,6 +69,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -90,6 +93,7 @@ Resources:
           JOB_ORDER_PDF_DESTINATION: !Ref JobOrderPdfsBucket
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -112,6 +116,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -134,6 +139,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -156,6 +162,7 @@ Resources:
         Variables:
           ENVIRONMENT: 'lambda'
           DB_ENGINE: 'postgres'
+          ROLLBAR_KEY: '{{resolve:ssm:rollbar-key}}'
     Metadata:
       Dockerfile: lambda.Dockerfile
       DockerContext: ./
@@ -470,11 +477,11 @@ Resources:
                   - 'logs:PutLogEvents'
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
-#                  - 'ec2:CreateNetworkInterface'
-#                  - 'ec2:DescribeNetworkInterfaces'
-#                  - 'ec2:DeleteNetworkInterface'
-#                  - 'ec2:AssignPrivateIpAddresses'
-#                  - 'ec2:UnassignPrivateIpAddresses'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:AssignPrivateIpAddresses'
+                  - 'ec2:UnassignPrivateIpAddresses'
                 Resource: '*'
               - Effect: Allow
                 Action:

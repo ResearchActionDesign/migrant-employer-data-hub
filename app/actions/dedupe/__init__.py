@@ -1,12 +1,12 @@
 import os
 from contextlib import contextmanager
-from io import BytesIO, StringIO
 from tempfile import mkstemp
-from typing import Union
+from typing import IO, Any, Generator, Union
 
 import boto3
 from botocore import exceptions
 from sqlalchemy import Table
+from sqlalchemy.future import Engine
 
 from app.models.dedupe_entity_map import DedupeEntityMap
 from app.models.employer_record import EmployerRecord
@@ -17,7 +17,7 @@ settings_file = DEDUPE_CONFIG_FILE_PREFIX + "cdm_dedupe_settings"
 training_file = DEDUPE_CONFIG_FILE_PREFIX + "cdm_dedupe_training.json"
 
 
-def get_employer_record_table(engine) -> Table:
+def get_employer_record_table(engine: Engine) -> Table:
     if not hasattr(get_employer_record_table, "employer_record_table"):
         get_employer_record_table.employer_record_table = Table(
             "employer_record", EmployerRecord.metadata, autoload_with=engine
@@ -25,7 +25,7 @@ def get_employer_record_table(engine) -> Table:
     return get_employer_record_table.employer_record_table
 
 
-def get_cluster_table(engine) -> Table:
+def get_cluster_table(engine: Engine) -> Table:
     if not hasattr(get_cluster_table, "table"):
         get_cluster_table.table = Table(
             "dedupe_entity_map", DedupeEntityMap.metadata, autoload_with=engine
@@ -34,7 +34,9 @@ def get_cluster_table(engine) -> Table:
 
 
 @contextmanager
-def get_file(filename: str, mode: str = "rt") -> Union[BytesIO, StringIO]:
+def get_file(
+    filename: str, mode: str = "rt"
+) -> Generator[Union[IO[Any], None], None, None]:
     if DEDUPE_CONFIG_BUCKET == "local":
         full_local_path = os.path.join(BASE_DIR, "../", filename)
         if os.path.exists(full_local_path) or mode[0] == "w":

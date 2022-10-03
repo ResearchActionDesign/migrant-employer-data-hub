@@ -6,7 +6,7 @@ from app.models.seasonal_jobs_job_order import SeasonalJobsJobOrder
 from app.settings import ROWS_BEFORE_COMMIT
 
 
-def reclean_raw_listings():
+def reclean_raw_listings() -> None:
     """
     Iterate through all the raw listings in the DB and clean each one.
 
