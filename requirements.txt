@@ -5,7 +5,7 @@ boto3==1.24.81
 botocore==1.27.81
 BTrees==4.10.1
 categorical-distance==1.9
-certifi==2022.9.24
+certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.1
 datetime-distance==0.1.3
