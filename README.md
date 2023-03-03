@@ -29,3 +29,7 @@ On initial deploy you will need to do the following:
 
 Note: The CloudFormation template is not reliably setting up S3 bucket triggers. You may find it easier to just add those via the AWS
 console UI.
+
+### Running the dedupe UI locally
+1. Start up postgres by running `docker-compose up`
+2. Run `pipenv run python interactive_dedupe_session.py`

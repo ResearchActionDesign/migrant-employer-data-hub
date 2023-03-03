@@ -35,3 +35,4 @@ repos:
   - id: prospector
     types: [python]
     exclude: (tests|migrations)
+
