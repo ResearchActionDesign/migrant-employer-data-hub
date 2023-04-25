@@ -110,11 +110,11 @@ workflows:
       - back_end_test:
           requires:
             - install_dependencies
-      - deploy_ec2:
-          requires:
-            - back_end_test
-            - lint
-          filters:
-            branches:
-              only:
-                main
+#      - deploy_ec2:
+#          requires:
+#            - back_end_test
+#            - lint
+#          filters:
+#            branches:
+#              only:
+#                main
