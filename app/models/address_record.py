@@ -106,7 +106,6 @@ class AddressRecord(SQLModelWithSnakeTableName, table=True):
         return hashlib.md5(str(self).encode())
 
     def clean(self) -> "AddressRecord":
-
         self.address_1 = (
             clean_string_field(self.address_1.title()) if self.address_1 else None
         )
