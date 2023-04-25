@@ -1,3 +1,13 @@
+# Migrant Employer Data Hub
+
+Source code for a Django, PostGres & AWS Lambda - based tool for scraping data from [seasonaljobs.dol.gov](https://seasonaljobs.dol.gov), as well as deduplicating employer records
+and importing data from other sources..
+
+Code (c) [Research Action Design, LLC](https://rad.cat). Originally produced for [Centro de los Derechos del Migrante, Inc](https://cdmigrante.org).
+
+Released under a GPL v3 license, see LICENSE file for specific text of license.
+
+
 ## Creating migrations
 
 Create a migration using alembic by running
